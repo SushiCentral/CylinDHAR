@@ -23,6 +23,12 @@ export class IntroScene extends Phaser.Scene {
     this.typeTimer = null;
     this.step = 1;
 
+    this.gasSinghSfx = new Audio("assets/audio/gas_singh.mp3");
+    this.gasSinghSfx.volume = 1.0;
+
+    this.femaleSfx = new Audio("assets/audio/female.mp3");
+    this.femaleSfx.volume = 1.0;
+
     this.bg1 = this.add.image(640, 360, "intro-bg").setDisplaySize(1280, 720).setDepth(0).setAlpha(1);
     this.bg2 = this.add.image(640, 360, "intro-bg-2").setDisplaySize(1280, 720).setDepth(1).setAlpha(0);
 
@@ -63,6 +69,7 @@ export class IntroScene extends Phaser.Scene {
 
     this.cameras.main.fadeIn(280, 0, 0, 0);
     this.showDialogue(DIALOGUE_1);
+    this.gasSinghSfx.play().catch(() => { });
 
     this.input.on("pointerdown", () => {
       ensureBgMusic(this);
@@ -144,6 +151,10 @@ export class IntroScene extends Phaser.Scene {
   }
 
   showSecondCutscene() {
+    if (this.gasSinghSfx) {
+      this.gasSinghSfx.pause();
+    }
+
     this.promptText.setAlpha(0);
     this.tweens.add({
       targets: this.bg2,
@@ -153,6 +164,7 @@ export class IntroScene extends Phaser.Scene {
       onComplete: () => {
         this.bg1.setVisible(false);
         this.showDialogue(DIALOGUE_2);
+        this.femaleSfx.play().catch(() => { });
       },
     });
   }
@@ -160,6 +172,14 @@ export class IntroScene extends Phaser.Scene {
   goToGame() {
     if (this.isTransitioning) {
       return;
+    }
+
+    if (this.gasSinghSfx) {
+      this.gasSinghSfx.pause();
+    }
+
+    if (this.femaleSfx) {
+      this.femaleSfx.pause();
     }
 
     this.isTransitioning = true;

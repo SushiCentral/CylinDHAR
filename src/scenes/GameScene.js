@@ -88,6 +88,15 @@ export class GameScene extends Phaser.Scene {
     this.maxLives = 2;
     this.livesRemaining = 2;
     this.invulnerableUntil = 0;
+
+    this.cylinderSfx = new Audio("assets/audio/cylinder.mp3");
+    this.cylinderSfx.volume = 0.6;
+
+    this.collisionSfx = new Audio("assets/audio/collision.mp3");
+    this.collisionSfx.volume = 0.7;
+
+    this.firstDeathSfx = new Audio("assets/audio/1st_death.mp3");
+    this.firstDeathSfx.volume = 1.0;
   }
 
   buildWorld() {
@@ -772,6 +781,12 @@ export class GameScene extends Phaser.Scene {
 
   collectCylinder(cylinder) {
     this.gasCylindersCollected += 1;
+
+    // Play pickup SFX (clone so overlapping pickups don't cut each other off)
+    const sfx = this.cylinderSfx.cloneNode();
+    sfx.volume = this.cylinderSfx.volume;
+    sfx.play().catch(() => { });
+
     this.collectPop(cylinder.x, cylinder.y);
     this.recycleCylinder(cylinder);
 
@@ -829,6 +844,11 @@ export class GameScene extends Phaser.Scene {
 
     if (this.livesRemaining > 1) {
       this.livesRemaining -= 1;
+
+      const sfx = this.firstDeathSfx.cloneNode();
+      sfx.volume = this.firstDeathSfx.volume;
+      sfx.play().catch(() => { });
+
       this.player.setTexture("player-car-last-life");
       this.player.setScale(0.85);
       this.player.body.setSize(90, this.player.displayHeight, true);
@@ -969,9 +989,10 @@ export class GameScene extends Phaser.Scene {
 
   lose(reason) {
     if (reason === "crash") {
-      if (this.crashSound) {
-        this.crashSound.play();
-      }
+      const sfx = this.collisionSfx.cloneNode();
+      sfx.volume = this.collisionSfx.volume;
+      sfx.play().catch(() => { });
+
       this.cameras.main.flash(120, 255, 225, 225);
       this.cameras.main.shake(220, 0.012);
     }
