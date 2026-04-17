@@ -12,12 +12,6 @@ export class IntroScene extends Phaser.Scene {
 
     this.add.image(640, 360, "intro-bg").setDisplaySize(1280, 720).setDepth(0);
 
-    this.leftCharacter = this.add.image(240, 445, "intro-char-left").setDepth(2);
-    this.rightCharacter = this.add.image(1040, 445, "intro-char-right").setDepth(2);
-
-    this.leftCharacter.setScale(1.12);
-    this.rightCharacter.setScale(1.12);
-
     this.add.rectangle(640, 586, 1040, 190, 0x0b1220, 0.9).setStrokeStyle(2, 0x38bdf8, 0.85).setDepth(3);
 
     this.nameText = this.add

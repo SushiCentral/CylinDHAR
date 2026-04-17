@@ -4,6 +4,8 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload() {
+    this.load.image("start-page-bg", "assets/sprites/start_page.png");
+    this.load.image("intro-bg", "assets/sprites/1st_cutscene.png");
     this.load.image("player-car", "assets/sprites/player_car.png");
     this.load.image("player-car-last-life", "assets/sprites/player_car_last_life.png");
     this.load.image("gas-cylinder", "assets/sprites/gas_cylinder.png");
@@ -18,6 +20,9 @@ export class BootScene extends Phaser.Scene {
   create() {
     if (!this.textures.exists("player-car") && this.textures.exists("player-car-fallback")) {
       this.textures.renameTexture("player-car-fallback", "player-car");
+    }
+    if (!this.textures.exists("start-page-bg") && this.textures.exists("start-page-bg-fallback")) {
+      this.textures.renameTexture("start-page-bg-fallback", "start-page-bg");
     }
     if (!this.textures.exists("player-car-last-life") && this.textures.exists("player-car-last-life-fallback")) {
       this.textures.renameTexture("player-car-last-life-fallback", "player-car-last-life");
@@ -45,7 +50,7 @@ export class BootScene extends Phaser.Scene {
     if (!this.textures.exists("intro-char-right") && this.textures.exists("intro-char-right-fallback")) {
       this.textures.renameTexture("intro-char-right-fallback", "intro-char-right");
     }
-    this.scene.start("intro");
+    this.scene.start("start");
   }
 
   createProceduralTextures() {
@@ -59,6 +64,21 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0x1e293b, 0.5);
     g.fillRect(0, 460, 1280, 260);
     g.generateTexture("sky-bg", 1280, 720);
+
+    g.clear();
+    g.fillStyle(0x020617, 1);
+    g.fillRect(0, 0, 1280, 720);
+    g.fillStyle(0x0f172a, 1);
+    g.fillRect(0, 390, 1280, 330);
+    g.fillStyle(0x0891b2, 0.22);
+    g.fillCircle(230, 230, 290);
+    g.fillStyle(0x2563eb, 0.2);
+    g.fillCircle(1040, 170, 250);
+    g.fillStyle(0x22d3ee, 0.12);
+    for (let i = 0; i < 11; i += 1) {
+      g.fillRect(i * 130, 0, 20, 720);
+    }
+    g.generateTexture("start-page-bg-fallback", 1280, 720);
 
     g.clear();
     g.fillStyle(0x2a3036, 1);
