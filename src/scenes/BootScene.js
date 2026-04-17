@@ -10,6 +10,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image("player-car", "assets/sprites/player_car.png");
     this.load.image("player-car-last-life", "assets/sprites/player_car_last_life.png");
     this.load.image("gas-cylinder", "assets/sprites/gas_cylinder.png");
+    this.load.image("barrier", "assets/sprites/yellow_barrier.png");
     this.load.image("road-tile", "assets/sprites/road_tile.png");
     this.load.image("obstacle-car-red", "assets/sprites/obstacle_car_red.png");
     this.load.image("obstacle-car-blue", "assets/sprites/obstacle_car_blue.png");
@@ -30,6 +31,9 @@ export class BootScene extends Phaser.Scene {
     }
     if (!this.textures.exists("gas-cylinder") && this.textures.exists("gas-cylinder-fallback")) {
       this.textures.renameTexture("gas-cylinder-fallback", "gas-cylinder");
+    }
+    if (!this.textures.exists("barrier") && this.textures.exists("barrier-fallback")) {
+      this.textures.renameTexture("barrier-fallback", "barrier");
     }
     if (!this.textures.exists("road-tile") && this.textures.exists("road-tile-fallback")) {
       this.textures.renameTexture("road-tile-fallback", "road-tile");
@@ -161,7 +165,7 @@ export class BootScene extends Phaser.Scene {
     g.fillRoundedRect(0, 0, 90, 56, 8);
     g.fillStyle(0x111827, 0.65);
     g.fillRect(0, 24, 90, 8);
-    g.generateTexture("barrier", 90, 56);
+    g.generateTexture("barrier-fallback", 90, 56);
 
     g.clear();
     g.fillStyle(0x38bdf8, 0.95);
