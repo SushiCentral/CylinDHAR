@@ -1,3 +1,5 @@
+import { ensureBgMusic, stopBgMusic } from "../utils/audio.js";
+
 const ROAD_CENTER_X = 640;
 const ROAD_RENDER_WIDTH = 900;
 const ROAD_DRIVE_WIDTH = 700;
@@ -40,6 +42,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   create() {
+    ensureBgMusic(this);
+
     this.initState();
     this.buildWorld();
     this.buildPlayer();
@@ -980,6 +984,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.gameState = "ended";
+    stopBgMusic(this);
     this.spawnEvent.paused = true;
     this.neonOverlay.setVisible(false);
     this.popupIcon.setVisible(false);

@@ -15,6 +15,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image("obstacle-car-red", "assets/sprites/obstacle_car_red.png");
     this.load.image("obstacle-car-blue", "assets/sprites/obstacle_car_blue.png");
     this.load.image("first-hit-image", "assets/sprites/image.png");
+    this.load.audio("bg-music-lv1", "assets/audio/bg_music_lv1.ogg");
     this.load.audio("last-life-alert", "assets/audio/last_life_alert.ogg");
     this.createProceduralTextures();
   }

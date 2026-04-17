@@ -1,3 +1,5 @@
+import { ensureBgMusic } from "../utils/audio.js";
+
 export class StartScene extends Phaser.Scene {
   constructor() {
     super("start");
@@ -62,6 +64,7 @@ export class StartScene extends Phaser.Scene {
       return;
     }
 
+    ensureBgMusic(this);
     this.isStarting = true;
     this.cameras.main.fadeOut(220, 0, 0, 0);
     this.time.delayedCall(230, () => {

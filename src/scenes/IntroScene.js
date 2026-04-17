@@ -1,3 +1,5 @@
+import { ensureBgMusic } from "../utils/audio.js";
+
 const DIALOGUE_1 = {
   name: "Dispatch HQ",
   text: "India mei cylinders laane ki zarurat hai - It's CylinDHARing time",
@@ -14,6 +16,8 @@ export class IntroScene extends Phaser.Scene {
   }
 
   create() {
+    ensureBgMusic(this);
+
     this.isTransitioning = false;
     this.isLineComplete = false;
     this.typeTimer = null;
