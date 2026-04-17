@@ -8,6 +8,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image("road-tile", "assets/sprites/road_tile.png");
     this.load.image("obstacle-car-red", "assets/sprites/obstacle_car_red.png");
     this.load.image("obstacle-car-blue", "assets/sprites/obstacle_car_blue.png");
+    this.load.image("first-hit-image", "assets/sprites/image.png");
     this.createProceduralTextures();
   }
 

@@ -19,6 +19,10 @@ const CYLINDER_SPEED_MAX = 260 * SPEED_MULTIPLIER;
 const OBSTACLE_SPAWN_LANE_CLEAR_Y = 280;
 const CYLINDER_SPAWN_LANE_CLEAR_Y = 340;
 const CYLINDER_OVERLAP_CULL_GAP = 84;
+const FIRST_HIT_IMAGE_OFFSET_X = 84;
+const FIRST_HIT_IMAGE_SPEED_MIN = 260 * SPEED_MULTIPLIER;
+const FIRST_HIT_IMAGE_SPEED_MAX = 340 * SPEED_MULTIPLIER;
+const HIT_INVULNERABLE_MS = 1200;
 
 const MEME_EVENTS = [
   { text: "Bro replied [skull]", icon: "icon-chat", kind: "shake" },
@@ -75,6 +79,11 @@ export class GameScene extends Phaser.Scene {
     this.gasCylindersCollected = 0;
     this.nextCylinderSpawnAt = this.time.now + Phaser.Math.Between(CYLINDER_SPAWN_MIN_MS, CYLINDER_SPAWN_MAX_MS);
     this.maxCylinderCount = 4;
+
+    this.hasShownFirstHitImage = false;
+    this.maxLives = 2;
+    this.livesRemaining = 2;
+    this.invulnerableUntil = 0;
   }
 
   buildWorld() {
@@ -167,8 +176,8 @@ export class GameScene extends Phaser.Scene {
       },
     });
 
-    this.physics.add.overlap(this.player, this.obstacles, () => {
-      this.lose("crash");
+    this.physics.add.overlap(this.player, this.obstacles, (_player, obstacle) => {
+      this.handleObstacleCollision(obstacle);
     });
   }
 
@@ -245,6 +254,20 @@ export class GameScene extends Phaser.Scene {
       })
       .setDepth(51);
 
+    this.livesCard = this.add
+      .rectangle(150, 128, 248, 62, 0x0f172a, 0.86)
+      .setStrokeStyle(2, 0x334155, 0.95)
+      .setDepth(49)
+      .setOrigin(0.5);
+    this.livesText = this.add
+      .text(38, 112, "Lives: 2", {
+        ...uiStyle,
+        fontSize: "24px",
+        color: "#fecaca",
+        strokeThickness: 5,
+      })
+      .setDepth(51);
+
     this.popupPanel = this.add
       .rectangle(640, 110, 500, 86, 0x0f172a, 0.94)
       .setStrokeStyle(2, 0x22d3ee, 0.9)
@@ -268,6 +291,7 @@ export class GameScene extends Phaser.Scene {
     this.lastMeterWidth = -1;
     this.lastControlsState = "normal";
     this.lastCylinderText = "Cylinders: 0";
+    this.lastLivesText = "Lives: 2";
   }
 
   buildDistractionSystem() {
@@ -375,6 +399,12 @@ export class GameScene extends Phaser.Scene {
     this.player.x = Math.round(this.player.x);
     this.playerShadow.x = this.player.x;
     this.playerShadow.alpha = 0.27 + Math.min(0.15, Math.abs(this.playerSpeedX) / 3200);
+
+    if (now < this.invulnerableUntil) {
+      this.player.alpha = Math.sin(now / 60) > 0 ? 0.45 : 1;
+    } else {
+      this.player.alpha = 1;
+    }
   }
 
   updateObstacles() {
@@ -384,12 +414,7 @@ export class GameScene extends Phaser.Scene {
       }
 
       if (obstacle.y > 830) {
-        if (obstacle.shadow && obstacle.shadow.active) {
-          obstacle.shadow.setActive(false).setVisible(false);
-        }
-        obstacle.setVelocityY(0);
-        this.obstacles.killAndHide(obstacle);
-        obstacle.body.enable = false;
+        this.recycleObstacle(obstacle);
       } else if (obstacle.shadow && obstacle.shadow.active) {
         obstacle.shadow.setPosition(obstacle.x, obstacle.y + 30);
       }
@@ -397,6 +422,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   updateCollectibles(now) {
+    this.updateFirstHitImage();
+
     this.gasCylinders.children.each((cylinder) => {
       if (!cylinder.active) {
         return;
@@ -504,6 +531,12 @@ export class GameScene extends Phaser.Scene {
     if (nextCylinderText !== this.lastCylinderText) {
       this.cylinderText.setText(nextCylinderText);
       this.lastCylinderText = nextCylinderText;
+    }
+
+    const nextLivesText = `Lives: ${this.livesRemaining}`;
+    if (nextLivesText !== this.lastLivesText) {
+      this.livesText.setText(nextLivesText);
+      this.lastLivesText = nextLivesText;
     }
 
     const reverseActive = now < this.controlsReversedUntil;
@@ -751,6 +784,88 @@ export class GameScene extends Phaser.Scene {
     this.recycleCylinder(cylinder);
   }
 
+  handleFirstCollisionImage() {
+    if (this.hasShownFirstHitImage || this.gameState !== "playing") {
+      return;
+    }
+
+    this.hasShownFirstHitImage = true;
+
+    const spawnX = Phaser.Math.Clamp(this.player.x + FIRST_HIT_IMAGE_OFFSET_X, this.driveLeft + 40, this.driveRight - 40);
+    const spawnY = this.player.y - 8;
+
+    this.firstHitImage = this.physics.add.image(spawnX, spawnY, "first-hit-image");
+    this.firstHitImage.setDepth(9.5);
+    this.firstHitImage.setScale(0.82);
+    this.firstHitImage.setImmovable(true);
+    this.firstHitImage.body.setAllowGravity(false);
+    this.firstHitImage.body.setVelocityY(0);
+    this.firstHitImage.body.setEnable(false);
+
+    this.tweens.add({
+      targets: this.firstHitImage,
+      scaleX: 0.94,
+      scaleY: 0.94,
+      duration: 140,
+      ease: "Back.out",
+      onComplete: () => {
+        if (!this.firstHitImage) {
+          return;
+        }
+        this.firstHitImage.body.setEnable(true);
+        this.firstHitImage.setVelocityY(Phaser.Math.Between(FIRST_HIT_IMAGE_SPEED_MIN, FIRST_HIT_IMAGE_SPEED_MAX));
+      },
+    });
+  }
+
+  handleObstacleCollision(obstacle) {
+    if (this.gameState !== "playing") {
+      return;
+    }
+
+    const now = this.time.now;
+    if (now < this.invulnerableUntil) {
+      return;
+    }
+
+    this.handleFirstCollisionImage();
+    this.recycleObstacle(obstacle);
+
+    if (this.livesRemaining > 1) {
+      this.livesRemaining -= 1;
+      this.invulnerableUntil = now + HIT_INVULNERABLE_MS;
+      this.cameras.main.flash(90, 255, 190, 190);
+      this.cameras.main.shake(120, 0.006);
+      return;
+    }
+
+    this.lose("crash");
+  }
+
+  recycleObstacle(obstacle) {
+    if (!obstacle || !obstacle.active) {
+      return;
+    }
+
+    if (obstacle.shadow && obstacle.shadow.active) {
+      obstacle.shadow.setActive(false).setVisible(false);
+    }
+    obstacle.setVelocityY(0);
+    this.obstacles.killAndHide(obstacle);
+    obstacle.body.enable = false;
+  }
+
+  updateFirstHitImage() {
+    if (!this.firstHitImage || !this.firstHitImage.active) {
+      return;
+    }
+
+    if (this.firstHitImage.y > 860) {
+      this.firstHitImage.destroy();
+      this.firstHitImage = null;
+    }
+  }
+
   recycleCylinder(cylinder) {
     cylinder.setVelocityY(0);
     this.gasCylinders.killAndHide(cylinder);
@@ -803,6 +918,11 @@ export class GameScene extends Phaser.Scene {
     this.spawnEvent.paused = true;
     this.neonOverlay.setVisible(false);
     this.popupIcon.setVisible(false);
+    this.player.alpha = 1;
+
+    if (this.firstHitImage && this.firstHitImage.active) {
+      this.firstHitImage.setVelocityY(0);
+    }
 
     const survivalSeconds = this.survivalTimeMs / 1000;
     const previousBest = Number(localStorage.getItem("cylindhar-best-time") || 0);
