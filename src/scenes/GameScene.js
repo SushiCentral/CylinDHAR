@@ -163,6 +163,7 @@ export class GameScene extends Phaser.Scene {
       a: Phaser.Input.Keyboard.KeyCodes.A,
       d: Phaser.Input.Keyboard.KeyCodes.D,
       r: Phaser.Input.Keyboard.KeyCodes.R,
+      two: Phaser.Input.Keyboard.KeyCodes.TWO,
     });
   }
 
@@ -330,6 +331,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(_time, delta) {
+    if (this.gameState === "ending_sequence") {
+      this.updateRoad(delta);
+      this.updateEndingSequence(delta);
+      return;
+    }
+
     if (this.gameState !== "playing") {
       if (Phaser.Input.Keyboard.JustDown(this.keys.r)) {
         this.scene.restart();
@@ -346,6 +353,11 @@ export class GameScene extends Phaser.Scene {
     this.updateCollectibles(now);
     this.updateDistractions(now, delta);
     this.updateUi(now);
+
+    // Debug shortcut: press 2 to get 9 cylinders instantly
+    if (Phaser.Input.Keyboard.JustDown(this.keys.two) && this.gasCylindersCollected < 9) {
+      this.gasCylindersCollected = 9;
+    }
 
     if (this.gasCylindersCollected >= TARGET_CYLINDERS_TO_WIN) {
       this.win();
@@ -790,7 +802,11 @@ export class GameScene extends Phaser.Scene {
     this.collectPop(cylinder.x, cylinder.y);
     this.recycleCylinder(cylinder);
 
-    if (this.gameState === "playing" && this.gasCylindersCollected >= TARGET_CYLINDERS_TO_WIN) {
+    if (
+      (this.gameState === "playing" || this.gameState === "ending_sequence") &&
+      this.gasCylindersCollected >= TARGET_CYLINDERS_TO_WIN &&
+      !this.endingStarted
+    ) {
       this.win();
     }
   }
@@ -984,7 +1000,149 @@ export class GameScene extends Phaser.Scene {
   }
 
   win() {
-    this.finishRound("win");
+    if (this.endingStarted) {
+      return;
+    }
+    this.endingStarted = true;
+
+    // Stop spawning obstacles, distractions, and cylinders
+    this.gameState = "ending_sequence";
+    this.spawnEvent.paused = true;
+    this.neonOverlay.setVisible(false);
+    this.blurOverlay.setVisible(false);
+    this.freezeOverlay.setVisible(false);
+    this.popupPanel.setVisible(false);
+    this.popupText.setVisible(false);
+    this.popupIcon.setVisible(false);
+    this.player.alpha = 1;
+    this.playerSpeedX = 0;
+
+    // Clear all remaining obstacles and cylinders
+    this.obstacles.children.each((obs) => {
+      if (obs.active) this.recycleObstacle(obs);
+    });
+    this.gasCylinders.children.each((cyl) => {
+      if (cyl.active) this.recycleCylinder(cyl);
+    });
+    if (this.firstHitImage && this.firstHitImage.active) {
+      this.firstHitImage.destroy();
+      this.firstHitImage = null;
+    }
+
+    // Center the player smoothly on the road
+    this.tweens.add({
+      targets: this.player,
+      x: ROAD_CENTER_X,
+      duration: 600,
+      ease: "Sine.easeInOut",
+    });
+    this.tweens.add({
+      targets: this.playerShadow,
+      x: ROAD_CENTER_X,
+      duration: 600,
+      ease: "Sine.easeInOut",
+    });
+
+    // Spawn the railway crossing at the top of the screen
+    this.railwayCrossing = this.add
+      .image(ROAD_CENTER_X, -120, "railway-crossing")
+      .setDepth(9)
+      .setDisplaySize(ROAD_RENDER_WIDTH + 40, 100);
+
+    this.railwayCrossingSpeed = this.obstacleBaseSpeed * 0.6;
+    this.trainTriggered = false;
+  }
+
+  updateEndingSequence(delta) {
+    if (!this.railwayCrossing || this.trainTriggered) {
+      return;
+    }
+
+    // Scroll the railway crossing down at the same speed as the road
+    const travel = (this.railwayCrossingSpeed * delta) / 1000;
+    this.railwayCrossing.y += travel;
+
+    // When the crossing reaches the player, snap it so the player is ON the tracks
+    if (this.railwayCrossing.y >= PLAYER_Y) {
+      this.railwayCrossing.y = PLAYER_Y;
+      this.trainTriggered = true;
+      this.triggerTrainSequence();
+    }
+  }
+
+  triggerTrainSequence() {
+    // Freeze the player in place
+    this.player.body.setVelocity(0, 0);
+    this.player.body.enable = false;
+
+    // Spawn train off-screen to the right
+    this.train = this.add
+      .image(1500, PLAYER_Y, "train")
+      .setDepth(15)
+      .setScale(1.1);
+
+    // Short pause before the train barrels in
+    this.time.delayedCall(400, () => {
+      // Train sweeps across from right to left, taking the player with it
+      this.tweens.add({
+        targets: this.train,
+        x: -400,
+        duration: 900,
+        ease: "Quad.in",
+      });
+
+      // Slight delay so the train "hits" the player mid-sweep
+      this.time.delayedCall(250, () => {
+        this.cameras.main.shake(200, 0.01);
+        // Player gets dragged off with the train
+        this.tweens.add({
+          targets: [this.player, this.playerShadow],
+          x: -400,
+          duration: 550,
+          ease: "Quad.in",
+        });
+      });
+
+      // After the train has passed, fade to chapter screen
+      this.time.delayedCall(1200, () => {
+        stopBgMusic(this);
+        this.cameras.main.fadeOut(1500, 0, 0, 0);
+
+        this.cameras.main.once("camerafadeoutcomplete", () => {
+          this.showChapter2Screen();
+        });
+      });
+    });
+  }
+
+  showChapter2Screen() {
+    // Destroy all game objects and show a clean black screen with text
+    this.children.removeAll(true);
+
+    this.add.rectangle(640, 360, 1280, 720, 0x000000, 1).setDepth(100);
+
+    const chapterText = this.add
+      .text(640, 360, "Chapter 2", {
+        fontFamily: "Trebuchet MS",
+        fontSize: "72px",
+        color: "#ffffff",
+        stroke: "#000000",
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5)
+      .setDepth(101)
+      .setAlpha(0);
+
+    this.cameras.main.fadeIn(800, 0, 0, 0);
+
+    // Fade in the "Chapter 2" text softly
+    this.tweens.add({
+      targets: chapterText,
+      alpha: 1,
+      duration: 1500,
+      delay: 400,
+      ease: "Sine.easeIn",
+    });
   }
 
   lose(reason) {
