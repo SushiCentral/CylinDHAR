@@ -287,6 +287,18 @@ export class GameScene extends Phaser.Scene {
       .setDepth(61)
       .setVisible(false);
 
+    this.lastLifeAlertText = this.add
+      .text(640, 180, "LAST LIFE", {
+        ...uiStyle,
+        fontSize: "48px",
+        color: "#fb7185",
+        strokeThickness: 7,
+      })
+      .setOrigin(0.5)
+      .setDepth(66)
+      .setAlpha(0)
+      .setVisible(false);
+
     this.lastUiTimeText = "Time: 0.0";
     this.lastMeterWidth = -1;
     this.lastControlsState = "normal";
@@ -297,6 +309,9 @@ export class GameScene extends Phaser.Scene {
   buildDistractionSystem() {
     this.ping = this.cache.audio.exists("ping") ? this.sound.add("ping", { volume: 0.35 }) : null;
     this.crashSound = this.cache.audio.exists("crash") ? this.sound.add("crash", { volume: 0.42 }) : null;
+    this.lastLifeSfx = this.cache.audio.exists("last-life-alert")
+      ? this.sound.add("last-life-alert", { volume: 0.45 })
+      : null;
   }
 
   setupDifficultyTimers() {
@@ -836,6 +851,7 @@ export class GameScene extends Phaser.Scene {
       this.player.setTexture("player-car-last-life");
       this.player.setScale(0.85);
       this.player.body.setSize(90, this.player.displayHeight, true);
+      this.showLastLifeAlert();
       this.invulnerableUntil = now + HIT_INVULNERABLE_MS;
       this.cameras.main.flash(90, 255, 190, 190);
       this.cameras.main.shake(120, 0.006);
@@ -856,6 +872,75 @@ export class GameScene extends Phaser.Scene {
     obstacle.setVelocityY(0);
     this.obstacles.killAndHide(obstacle);
     obstacle.body.enable = false;
+  }
+
+  showLastLifeAlert() {
+    if (!this.lastLifeAlertText) {
+      return;
+    }
+
+    this.playLastLifeAlertSfx();
+
+    this.tweens.killTweensOf(this.lastLifeAlertText);
+    this.lastLifeAlertText.setVisible(true);
+    this.lastLifeAlertText.setAlpha(1);
+    this.lastLifeAlertText.setScale(0.94);
+
+    this.tweens.add({
+      targets: this.lastLifeAlertText,
+      scaleX: 1,
+      scaleY: 1,
+      duration: 140,
+      ease: "Back.out",
+    });
+
+    this.tweens.add({
+      targets: this.lastLifeAlertText,
+      alpha: 0,
+      delay: 820,
+      duration: 220,
+      ease: "Quad.out",
+      onComplete: () => {
+        if (this.lastLifeAlertText) {
+          this.lastLifeAlertText.setVisible(false);
+        }
+      },
+    });
+  }
+
+  playLastLifeAlertSfx() {
+    if (this.lastLifeSfx) {
+      this.lastLifeSfx.play();
+      return;
+    }
+
+    const audioCtx = this.sound?.context;
+    if (!audioCtx || audioCtx.state !== "running") {
+      return;
+    }
+
+    const now = audioCtx.currentTime;
+    const gainNode = audioCtx.createGain();
+    gainNode.connect(audioCtx.destination);
+    gainNode.gain.setValueAtTime(0.001, now);
+    gainNode.gain.exponentialRampToValueAtTime(0.09, now + 0.015);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+
+    const oscA = audioCtx.createOscillator();
+    oscA.type = "triangle";
+    oscA.frequency.setValueAtTime(720, now);
+    oscA.frequency.exponentialRampToValueAtTime(980, now + 0.12);
+    oscA.connect(gainNode);
+    oscA.start(now);
+    oscA.stop(now + 0.12);
+
+    const oscB = audioCtx.createOscillator();
+    oscB.type = "sine";
+    oscB.frequency.setValueAtTime(860, now + 0.11);
+    oscB.frequency.exponentialRampToValueAtTime(1180, now + 0.24);
+    oscB.connect(gainNode);
+    oscB.start(now + 0.11);
+    oscB.stop(now + 0.24);
   }
 
   updateFirstHitImage() {
@@ -922,6 +1007,11 @@ export class GameScene extends Phaser.Scene {
     this.neonOverlay.setVisible(false);
     this.popupIcon.setVisible(false);
     this.player.alpha = 1;
+
+    if (this.lastLifeAlertText) {
+      this.lastLifeAlertText.setVisible(false);
+      this.lastLifeAlertText.setAlpha(0);
+    }
 
     if (this.firstHitImage && this.firstHitImage.active) {
       this.firstHitImage.setVelocityY(0);
