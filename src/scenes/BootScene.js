@@ -7,6 +7,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image("player-car", "assets/sprites/player_car.png");
     this.load.image("road-tile", "assets/sprites/road_tile.png");
     this.load.image("obstacle-car-red", "assets/sprites/obstacle_car_red.png");
+    this.load.image("obstacle-car-blue", "assets/sprites/obstacle_car_blue.png");
     this.createProceduralTextures();
   }
 
@@ -19,6 +20,11 @@ export class BootScene extends Phaser.Scene {
     }
     if (!this.textures.exists("obstacle-car-red") && this.textures.exists("obstacle-car-a-fallback")) {
       this.textures.renameTexture("obstacle-car-a-fallback", "obstacle-car-red");
+    }
+    if (!this.textures.exists("obstacle-car-blue")) {
+      if (this.textures.exists("obstacle-car-b")) {
+        this.textures.renameTexture("obstacle-car-b", "obstacle-car-blue");
+      }
     }
     this.scene.start("game");
   }

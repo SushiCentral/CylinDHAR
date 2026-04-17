@@ -619,11 +619,8 @@ export class GameScene extends Phaser.Scene {
     this.lastSpawnX = spawnX;
 
     const isBarrier = Phaser.Math.Between(0, 100) < 24;
-    const texture = isBarrier
-      ? "barrier"
-      : Phaser.Math.Between(0, 1) === 0
-        ? "obstacle-car-red"
-        : "obstacle-car-b";
+    const obstacleTextures = isBarrier ? [] : ["obstacle-car-red", "obstacle-car-blue", "obstacle-car-blue"];
+    const texture = isBarrier ? "barrier" : Phaser.Utils.Array.GetRandom(obstacleTextures);
 
     let obstacle = this.obstacles.get(spawnX, -90, texture);
     if (!obstacle) {
