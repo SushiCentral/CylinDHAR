@@ -4,7 +4,7 @@ const ROAD_DRIVE_WIDTH = 700;
 const ROAD_SCROLL_HEIGHT = 940;
 const LANE_COUNT = 5;
 const LANE_ALIGNMENT_OFFSET = 0;
-const SPEED_MULTIPLIER = 1.5;
+const SPEED_MULTIPLIER = 2;
 const PLAYER_BASE_SPEED = 580 * SPEED_MULTIPLIER;
 const PLAYER_ACCEL = 2400 * SPEED_MULTIPLIER;
 const PLAYER_DRAG = 3200 * SPEED_MULTIPLIER;
@@ -361,8 +361,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   updateRoad(delta) {
-    const normalized = Phaser.Math.Clamp((this.obstacleBaseSpeed - 220) / 210, 0, 1);
-    const scrollSpeed = 210 + normalized * 130;
+    const normalized = Phaser.Math.Clamp(
+      (this.obstacleBaseSpeed - 220 * SPEED_MULTIPLIER) / (210 * SPEED_MULTIPLIER),
+      0,
+      1,
+    );
+    const scrollSpeed = 210 * SPEED_MULTIPLIER + normalized * (130 * SPEED_MULTIPLIER);
     const travel = (scrollSpeed * delta) / 1000;
 
     for (let i = 0; i < this.roadSegments.length; i += 1) {
