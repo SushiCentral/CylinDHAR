@@ -10,7 +10,7 @@ const PLAYER_ACCEL = 2400 * SPEED_MULTIPLIER;
 const PLAYER_DRAG = 3200 * SPEED_MULTIPLIER;
 const PLAYER_Y = 620;
 const PLAYER_HALF_WIDTH = 30;
-const RUN_DURATION_MS = 75_000;
+const TARGET_CYLINDERS_TO_WIN = 10;
 const DISTRACTION_MAX = 100;
 const CYLINDER_SPAWN_MIN_MS = 3500;
 const CYLINDER_SPAWN_MAX_MS = 6200;
@@ -213,7 +213,7 @@ export class GameScene extends Phaser.Scene {
     this.timeText.setDepth(50);
 
     this.goalText = this.add
-      .text(26, 60, "Survive 75s", { ...uiStyle, fontSize: "20px" })
+      .text(26, 60, `Collect ${TARGET_CYLINDERS_TO_WIN} cylinders`, { ...uiStyle, fontSize: "20px" })
       .setDepth(50);
 
     this.controlsText = this.add
@@ -225,28 +225,13 @@ export class GameScene extends Phaser.Scene {
       })
       .setDepth(50);
 
-    this.meterCard = this.add
-      .rectangle(1040, 44, 280, 80, 0x0f172a, 0.86)
-      .setStrokeStyle(2, 0x334155, 0.95)
-      .setDepth(49);
-    this.meterBg = this.add.rectangle(1040, 44, 220, 22, 0x020617, 0.92).setDepth(50);
-    this.meterFill = this.add.rectangle(931, 32, 2, 14, 0x22c55e, 1).setDepth(51).setOrigin(0, 0.5);
-    this.meterLabel = this.add
-      .text(930, 16, "Distraction", {
-        ...uiStyle,
-        fontSize: "18px",
-        color: "#e2e8f0",
-        strokeThickness: 4,
-      })
-      .setDepth(51);
-
     this.cylinderCard = this.add
-      .rectangle(1040, 118, 280, 72, 0x0f172a, 0.86)
+      .rectangle(1040, 44, 280, 72, 0x0f172a, 0.86)
       .setStrokeStyle(2, 0x334155, 0.95)
       .setDepth(49);
-    this.cylinderIcon = this.add.image(930, 118, "gas-cylinder").setDepth(51).setScale(0.44);
+    this.cylinderIcon = this.add.image(930, 44, "gas-cylinder").setDepth(51).setScale(0.44);
     this.cylinderText = this.add
-      .text(968, 102, "Cylinders: 0", {
+      .text(968, 28, "Cylinders: 0", {
         ...uiStyle,
         fontSize: "24px",
         color: "#bbf7d0",
@@ -300,7 +285,6 @@ export class GameScene extends Phaser.Scene {
       .setVisible(false);
 
     this.lastUiTimeText = "Time: 0.0";
-    this.lastMeterWidth = -1;
     this.lastControlsState = "normal";
     this.lastCylinderText = "Cylinders: 0";
     this.lastLivesText = "Lives: 2";
@@ -350,7 +334,7 @@ export class GameScene extends Phaser.Scene {
     this.updateDistractions(now, delta);
     this.updateUi(now);
 
-    if (this.survivalTimeMs >= RUN_DURATION_MS) {
+    if (this.gasCylindersCollected >= TARGET_CYLINDERS_TO_WIN) {
       this.win();
       return;
     }
@@ -529,21 +513,6 @@ export class GameScene extends Phaser.Scene {
     if (nextTimeText !== this.lastUiTimeText) {
       this.timeText.setText(nextTimeText);
       this.lastUiTimeText = nextTimeText;
-    }
-
-    const ratio = Phaser.Math.Clamp(this.distractionMeter / DISTRACTION_MAX, 0, 1);
-    const nextMeterWidth = Math.round(202 * ratio);
-    if (nextMeterWidth !== this.lastMeterWidth) {
-      this.meterFill.width = nextMeterWidth;
-      this.lastMeterWidth = nextMeterWidth;
-    }
-
-    if (ratio < 0.4) {
-      this.meterFill.fillColor = 0x22c55e;
-    } else if (ratio < 0.75) {
-      this.meterFill.fillColor = 0xf59e0b;
-    } else {
-      this.meterFill.fillColor = 0xef4444;
     }
 
     const nextCylinderText = `Cylinders: ${this.gasCylindersCollected}`;
@@ -801,6 +770,10 @@ export class GameScene extends Phaser.Scene {
     this.gasCylindersCollected += 1;
     this.collectPop(cylinder.x, cylinder.y);
     this.recycleCylinder(cylinder);
+
+    if (this.gameState === "playing" && this.gasCylindersCollected >= TARGET_CYLINDERS_TO_WIN) {
+      this.win();
+    }
   }
 
   handleFirstCollisionImage() {

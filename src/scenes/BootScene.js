@@ -6,6 +6,7 @@ export class BootScene extends Phaser.Scene {
   preload() {
     this.load.image("start-page-bg", "assets/sprites/start_page.png");
     this.load.image("intro-bg", "assets/sprites/1st_cutscene.png");
+    this.load.image("intro-bg-2", "assets/sprites/2nd_cutscene.png");
     this.load.image("player-car", "assets/sprites/player_car.png");
     this.load.image("player-car-last-life", "assets/sprites/player_car_last_life.png");
     this.load.image("gas-cylinder", "assets/sprites/gas_cylinder.png");
@@ -43,6 +44,9 @@ export class BootScene extends Phaser.Scene {
     }
     if (!this.textures.exists("intro-bg") && this.textures.exists("intro-bg-fallback")) {
       this.textures.renameTexture("intro-bg-fallback", "intro-bg");
+    }
+    if (!this.textures.exists("intro-bg-2") && this.textures.exists("intro-bg-2-fallback")) {
+      this.textures.renameTexture("intro-bg-2-fallback", "intro-bg-2");
     }
     if (!this.textures.exists("intro-char-left") && this.textures.exists("intro-char-left-fallback")) {
       this.textures.renameTexture("intro-char-left-fallback", "intro-char-left");
@@ -215,6 +219,21 @@ export class BootScene extends Phaser.Scene {
       g.fillRect(i * 120, 0, 24, 720);
     }
     g.generateTexture("intro-bg-fallback", 1280, 720);
+
+    g.clear();
+    g.fillStyle(0x130824, 1);
+    g.fillRect(0, 0, 1280, 720);
+    g.fillStyle(0x261048, 1);
+    g.fillRect(0, 390, 1280, 330);
+    g.fillStyle(0xf43f5e, 0.22);
+    g.fillCircle(240, 220, 270);
+    g.fillStyle(0xa855f7, 0.2);
+    g.fillCircle(1040, 190, 240);
+    g.fillStyle(0xfb7185, 0.1);
+    for (let i = 0; i < 12; i += 1) {
+      g.fillRect(i * 120, 0, 24, 720);
+    }
+    g.generateTexture("intro-bg-2-fallback", 1280, 720);
 
     g.clear();
     g.fillStyle(0x22c55e, 1);

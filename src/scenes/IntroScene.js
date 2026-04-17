@@ -1,4 +1,12 @@
-const DIALOGUE_LINE = "India mei cylinders laane ki zarurat hai - It's CylinDHARing time";
+const DIALOGUE_1 = {
+  name: "Dispatch HQ",
+  text: "India mei cylinders laane ki zarurat hai - It's CylinDHARing time",
+};
+
+const DIALOGUE_2 = {
+  name: "female",
+  text: "Mai bhi tere saath aari aari aari",
+};
 
 export class IntroScene extends Phaser.Scene {
   constructor() {
@@ -6,16 +14,18 @@ export class IntroScene extends Phaser.Scene {
   }
 
   create() {
-    this.isLineComplete = false;
     this.isTransitioning = false;
+    this.isLineComplete = false;
     this.typeTimer = null;
+    this.step = 1;
 
-    this.add.image(640, 360, "intro-bg").setDisplaySize(1280, 720).setDepth(0);
+    this.bg1 = this.add.image(640, 360, "intro-bg").setDisplaySize(1280, 720).setDepth(0).setAlpha(1);
+    this.bg2 = this.add.image(640, 360, "intro-bg-2").setDisplaySize(1280, 720).setDepth(1).setAlpha(0);
 
     this.add.rectangle(640, 586, 1040, 190, 0x0b1220, 0.9).setStrokeStyle(2, 0x38bdf8, 0.85).setDepth(3);
 
     this.nameText = this.add
-      .text(148, 515, "Dispatch HQ", {
+      .text(148, 515, DIALOGUE_1.name, {
         fontFamily: "Trebuchet MS",
         fontSize: "30px",
         color: "#93c5fd",
@@ -48,7 +58,7 @@ export class IntroScene extends Phaser.Scene {
       .setAlpha(0);
 
     this.cameras.main.fadeIn(280, 0, 0, 0);
-    this.typeLine(DIALOGUE_LINE, 24);
+    this.showDialogue(DIALOGUE_1);
 
     this.input.on("pointerdown", () => {
       this.advanceOrCompleteLine();
@@ -63,8 +73,21 @@ export class IntroScene extends Phaser.Scene {
     });
   }
 
-  typeLine(text, speedMs) {
+  showDialogue(dialogue) {
+    this.currentDialogue = dialogue;
+    this.nameText.setText(dialogue.name);
     this.dialogueText.setText("");
+    this.isLineComplete = false;
+    this.promptText.setAlpha(0);
+    this.typeLine(dialogue.text, 24);
+  }
+
+  typeLine(text, speedMs) {
+    if (this.typeTimer) {
+      this.typeTimer.remove(false);
+      this.typeTimer = null;
+    }
+
     let index = 0;
 
     this.typeTimer = this.time.addEvent({
@@ -99,13 +122,33 @@ export class IntroScene extends Phaser.Scene {
         this.typeTimer.remove(false);
         this.typeTimer = null;
       }
-      this.dialogueText.setText(DIALOGUE_LINE);
+      this.dialogueText.setText(this.currentDialogue.text);
       this.isLineComplete = true;
       this.promptText.setAlpha(1);
       return;
     }
 
+    if (this.step === 1) {
+      this.step = 2;
+      this.showSecondCutscene();
+      return;
+    }
+
     this.goToGame();
+  }
+
+  showSecondCutscene() {
+    this.promptText.setAlpha(0);
+    this.tweens.add({
+      targets: this.bg2,
+      alpha: 1,
+      duration: 320,
+      ease: "Sine.easeInOut",
+      onComplete: () => {
+        this.bg1.setVisible(false);
+        this.showDialogue(DIALOGUE_2);
+      },
+    });
   }
 
   goToGame() {
