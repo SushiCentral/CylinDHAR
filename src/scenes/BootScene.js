@@ -5,6 +5,7 @@ export class BootScene extends Phaser.Scene {
 
   preload() {
     this.load.image("player-car", "assets/sprites/player_car.png");
+    this.load.image("player-car-last-life", "assets/sprites/player_car_last_life.png");
     this.load.image("road-tile", "assets/sprites/road_tile.png");
     this.load.image("obstacle-car-red", "assets/sprites/obstacle_car_red.png");
     this.load.image("obstacle-car-blue", "assets/sprites/obstacle_car_blue.png");
@@ -15,6 +16,9 @@ export class BootScene extends Phaser.Scene {
   create() {
     if (!this.textures.exists("player-car") && this.textures.exists("player-car-fallback")) {
       this.textures.renameTexture("player-car-fallback", "player-car");
+    }
+    if (!this.textures.exists("player-car-last-life") && this.textures.exists("player-car-last-life-fallback")) {
+      this.textures.renameTexture("player-car-last-life-fallback", "player-car-last-life");
     }
     if (!this.textures.exists("road-tile") && this.textures.exists("road-tile-fallback")) {
       this.textures.renameTexture("road-tile-fallback", "road-tile");
@@ -81,6 +85,18 @@ export class BootScene extends Phaser.Scene {
     g.fillRect(10, 88, 17, 26);
     g.fillRect(43, 88, 17, 26);
     g.generateTexture("player-car-fallback", 70, 120);
+
+    g.clear();
+    g.fillStyle(0xf97316, 1);
+    g.fillRoundedRect(0, 0, 70, 120, 12);
+    g.fillStyle(0xfee2e2, 0.85);
+    g.fillRoundedRect(11, 12, 48, 24, 9);
+    g.fillStyle(0xfca5a5, 0.38);
+    g.fillRoundedRect(8, 44, 54, 16, 7);
+    g.fillStyle(0x111827, 1);
+    g.fillRect(10, 88, 17, 26);
+    g.fillRect(43, 88, 17, 26);
+    g.generateTexture("player-car-last-life-fallback", 70, 120);
 
     g.clear();
     g.fillStyle(0xfb7185, 1);

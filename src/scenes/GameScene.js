@@ -833,6 +833,9 @@ export class GameScene extends Phaser.Scene {
 
     if (this.livesRemaining > 1) {
       this.livesRemaining -= 1;
+      this.player.setTexture("player-car-last-life");
+      this.player.setScale(0.85);
+      this.player.body.setSize(90, this.player.displayHeight, true);
       this.invulnerableUntil = now + HIT_INVULNERABLE_MS;
       this.cameras.main.flash(90, 255, 190, 190);
       this.cameras.main.shake(120, 0.006);
