@@ -4,13 +4,21 @@ const ROAD_DRIVE_WIDTH = 700;
 const ROAD_SCROLL_HEIGHT = 940;
 const LANE_COUNT = 5;
 const LANE_ALIGNMENT_OFFSET = 0;
-const PLAYER_BASE_SPEED = 580;
-const PLAYER_ACCEL = 2400;
-const PLAYER_DRAG = 3200;
+const SPEED_MULTIPLIER = 1.5;
+const PLAYER_BASE_SPEED = 580 * SPEED_MULTIPLIER;
+const PLAYER_ACCEL = 2400 * SPEED_MULTIPLIER;
+const PLAYER_DRAG = 3200 * SPEED_MULTIPLIER;
 const PLAYER_Y = 620;
 const PLAYER_HALF_WIDTH = 30;
 const RUN_DURATION_MS = 75_000;
 const DISTRACTION_MAX = 100;
+const CYLINDER_SPAWN_MIN_MS = 3500;
+const CYLINDER_SPAWN_MAX_MS = 6200;
+const CYLINDER_SPEED_MIN = 180 * SPEED_MULTIPLIER;
+const CYLINDER_SPEED_MAX = 260 * SPEED_MULTIPLIER;
+const OBSTACLE_SPAWN_LANE_CLEAR_Y = 280;
+const CYLINDER_SPAWN_LANE_CLEAR_Y = 340;
+const CYLINDER_OVERLAP_CULL_GAP = 84;
 
 const MEME_EVENTS = [
   { text: "Bro replied [skull]", icon: "icon-chat", kind: "shake" },
@@ -33,6 +41,7 @@ export class GameScene extends Phaser.Scene {
     this.buildPlayer();
     this.buildInput();
     this.buildObstacles();
+    this.buildCollectibles();
     this.buildUi();
     this.buildDistractionSystem();
     this.setupDifficultyTimers();
@@ -49,8 +58,8 @@ export class GameScene extends Phaser.Scene {
 
     this.currentSpawnDelay = 1100;
     this.minSpawnDelay = 470;
-    this.obstacleBaseSpeed = 220;
-    this.obstacleSpeedCap = 430;
+    this.obstacleBaseSpeed = 220 * SPEED_MULTIPLIER;
+    this.obstacleSpeedCap = 430 * SPEED_MULTIPLIER;
     this.difficultyLevel = 1;
     this.maxObstacleCount = 16;
 
@@ -62,6 +71,10 @@ export class GameScene extends Phaser.Scene {
     this.neonBurstUntil = 0;
     this.reelCooldownUntil = 0;
     this.neonPulseAccumulator = 0;
+
+    this.gasCylindersCollected = 0;
+    this.nextCylinderSpawnAt = this.time.now + Phaser.Math.Between(CYLINDER_SPAWN_MIN_MS, CYLINDER_SPAWN_MAX_MS);
+    this.maxCylinderCount = 4;
   }
 
   buildWorld() {
@@ -118,7 +131,7 @@ export class GameScene extends Phaser.Scene {
     this.player.setScale(0.85);
     this.player.setImmovable(true);
     this.player.body.setAllowGravity(false);
-    this.player.body.setSize(48, 92, true);
+    this.player.body.setSize(90, this.player.displayHeight, true);
     this.player.setDepth(10);
   }
 
@@ -156,6 +169,18 @@ export class GameScene extends Phaser.Scene {
 
     this.physics.add.overlap(this.player, this.obstacles, () => {
       this.lose("crash");
+    });
+  }
+
+  buildCollectibles() {
+    this.gasCylinders = this.physics.add.group({
+      immovable: true,
+      allowGravity: false,
+      maxSize: this.maxCylinderCount,
+    });
+
+    this.physics.add.overlap(this.player, this.gasCylinders, (_player, cylinder) => {
+      this.collectCylinder(cylinder);
     });
   }
 
@@ -206,6 +231,20 @@ export class GameScene extends Phaser.Scene {
       })
       .setDepth(51);
 
+    this.cylinderCard = this.add
+      .rectangle(1040, 118, 280, 72, 0x0f172a, 0.86)
+      .setStrokeStyle(2, 0x334155, 0.95)
+      .setDepth(49);
+    this.cylinderIcon = this.add.image(930, 118, "gas-cylinder").setDepth(51).setScale(0.44);
+    this.cylinderText = this.add
+      .text(968, 102, "Cylinders: 0", {
+        ...uiStyle,
+        fontSize: "24px",
+        color: "#bbf7d0",
+        strokeThickness: 5,
+      })
+      .setDepth(51);
+
     this.popupPanel = this.add
       .rectangle(640, 110, 500, 86, 0x0f172a, 0.94)
       .setStrokeStyle(2, 0x22d3ee, 0.9)
@@ -228,6 +267,7 @@ export class GameScene extends Phaser.Scene {
     this.lastUiTimeText = "Time: 0.0";
     this.lastMeterWidth = -1;
     this.lastControlsState = "normal";
+    this.lastCylinderText = "Cylinders: 0";
   }
 
   buildDistractionSystem() {
@@ -267,6 +307,7 @@ export class GameScene extends Phaser.Scene {
     this.updateRoad(delta);
     this.updatePlayerMovement(delta, now);
     this.updateObstacles();
+    this.updateCollectibles(now);
     this.updateDistractions(now, delta);
     this.updateUi(now);
 
@@ -355,6 +396,32 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  updateCollectibles(now) {
+    this.gasCylinders.children.each((cylinder) => {
+      if (!cylinder.active) {
+        return;
+      }
+
+      if (this.isTooCloseToObstacle(cylinder)) {
+        this.recycleCylinder(cylinder);
+        return;
+      }
+
+      if (cylinder.y > 830) {
+        this.recycleCylinder(cylinder);
+      }
+    });
+
+    if (
+      now >= this.nextCylinderSpawnAt &&
+      this.gasCylinders.countActive(true) < this.maxCylinderCount &&
+      this.gameState === "playing"
+    ) {
+      this.spawnCylinder();
+      this.nextCylinderSpawnAt = now + Phaser.Math.Between(CYLINDER_SPAWN_MIN_MS, CYLINDER_SPAWN_MAX_MS);
+    }
+  }
+
   updateDistractions(now, delta) {
     const decay = (8 * delta) / 1000;
     this.distractionMeter = Math.max(0, this.distractionMeter - decay);
@@ -431,6 +498,12 @@ export class GameScene extends Phaser.Scene {
       this.meterFill.fillColor = 0xf59e0b;
     } else {
       this.meterFill.fillColor = 0xef4444;
+    }
+
+    const nextCylinderText = `Cylinders: ${this.gasCylindersCollected}`;
+    if (nextCylinderText !== this.lastCylinderText) {
+      this.cylinderText.setText(nextCylinderText);
+      this.lastCylinderText = nextCylinderText;
     }
 
     const reverseActive = now < this.controlsReversedUntil;
@@ -522,11 +595,17 @@ export class GameScene extends Phaser.Scene {
   }
 
   spawnObstacle() {
-    let spawnX = Phaser.Utils.Array.GetRandom(this.lanes);
+    let spawnX = this.pickSpawnLaneX(OBSTACLE_SPAWN_LANE_CLEAR_Y);
+    if (spawnX === null) {
+      return;
+    }
 
     if (Math.abs(spawnX - this.lastSpawnX) < 50 && Phaser.Math.Between(0, 100) < 55) {
       const alternatives = this.lanes.filter((x) => Math.abs(x - this.lastSpawnX) >= 100);
-      spawnX = Phaser.Utils.Array.GetRandom(alternatives);
+      const clearAlternatives = alternatives.filter((x) => this.isLaneSpawnClear(x, OBSTACLE_SPAWN_LANE_CLEAR_Y));
+      if (clearAlternatives.length > 0) {
+        spawnX = Phaser.Utils.Array.GetRandom(clearAlternatives);
+      }
     }
 
     const timeSinceStart = this.time.now - this.startTime;
@@ -576,6 +655,131 @@ export class GameScene extends Phaser.Scene {
     obstacle.shadow.setPosition(spawnX, -58);
     obstacle.shadow.scaleX = isBarrier ? 1.15 : 1;
     obstacle.shadow.scaleY = isBarrier ? 0.9 : 1;
+  }
+
+  spawnCylinder() {
+    const spawnX = this.pickSpawnLaneX(CYLINDER_SPAWN_LANE_CLEAR_Y);
+    if (spawnX === null) {
+      return;
+    }
+
+    let cylinder = this.gasCylinders.get(spawnX, -70, "gas-cylinder");
+    if (!cylinder) {
+      cylinder = this.physics.add.image(spawnX, -70, "gas-cylinder");
+      this.gasCylinders.add(cylinder);
+    }
+
+    cylinder.setActive(true);
+    cylinder.setVisible(true);
+    cylinder.body.enable = true;
+    cylinder.setImmovable(true);
+    cylinder.body.setAllowGravity(false);
+    cylinder.body.setSize(34, 58, true);
+    cylinder.setPosition(spawnX, -70);
+    cylinder.setVelocityY(Phaser.Math.Between(CYLINDER_SPEED_MIN, CYLINDER_SPEED_MAX));
+    cylinder.setDepth(9);
+    cylinder.setScale(0.82);
+  }
+
+  pickSpawnLaneX(minClearY) {
+    const shuffled = Phaser.Utils.Array.Shuffle([...this.lanes]);
+    for (let i = 0; i < shuffled.length; i += 1) {
+      if (this.isLaneSpawnClear(shuffled[i], minClearY)) {
+        return shuffled[i];
+      }
+    }
+    return null;
+  }
+
+  isLaneSpawnClear(laneX, minClearY) {
+    const laneIndex = this.getLaneIndexForX(laneX);
+
+    let blocked = false;
+    this.obstacles.children.each((obstacle) => {
+      if (blocked || !obstacle.active) {
+        return;
+      }
+
+      if (this.getLaneIndexForX(obstacle.x) === laneIndex && obstacle.y < minClearY) {
+        blocked = true;
+      }
+    });
+
+    if (blocked) {
+      return false;
+    }
+
+    this.gasCylinders.children.each((cylinder) => {
+      if (blocked || !cylinder.active) {
+        return;
+      }
+
+      if (this.getLaneIndexForX(cylinder.x) === laneIndex && cylinder.y < minClearY) {
+        blocked = true;
+      }
+    });
+
+    return !blocked;
+  }
+
+  isTooCloseToObstacle(cylinder) {
+    const cylinderLane = this.getLaneIndexForX(cylinder.x);
+    let overlaps = false;
+
+    this.obstacles.children.each((obstacle) => {
+      if (overlaps || !obstacle.active) {
+        return;
+      }
+
+      if (this.getLaneIndexForX(obstacle.x) !== cylinderLane) {
+        return;
+      }
+
+      if (Math.abs(obstacle.y - cylinder.y) < CYLINDER_OVERLAP_CULL_GAP) {
+        overlaps = true;
+      }
+    });
+
+    return overlaps;
+  }
+
+  getLaneIndexForX(x) {
+    const laneRaw = (x - this.driveLeft) / this.laneWidth;
+    return Phaser.Math.Clamp(Math.round(laneRaw - 0.5), 0, LANE_COUNT - 1);
+  }
+
+  collectCylinder(cylinder) {
+    this.gasCylindersCollected += 1;
+    this.collectPop(cylinder.x, cylinder.y);
+    this.recycleCylinder(cylinder);
+  }
+
+  recycleCylinder(cylinder) {
+    cylinder.setVelocityY(0);
+    this.gasCylinders.killAndHide(cylinder);
+    cylinder.body.enable = false;
+  }
+
+  collectPop(x, y) {
+    const text = this.add
+      .text(x, y - 12, "+1", {
+        fontFamily: "Trebuchet MS",
+        fontSize: "24px",
+        color: "#bbf7d0",
+        stroke: "#052e16",
+        strokeThickness: 4,
+      })
+      .setOrigin(0.5)
+      .setDepth(70);
+
+    this.tweens.add({
+      targets: text,
+      y: y - 40,
+      alpha: 0,
+      duration: 340,
+      ease: "Quad.out",
+      onComplete: () => text.destroy(),
+    });
   }
 
   win() {
