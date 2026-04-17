@@ -65,10 +65,12 @@ export class IntroScene extends Phaser.Scene {
     this.showDialogue(DIALOGUE_1);
 
     this.input.on("pointerdown", () => {
+      ensureBgMusic(this);
       this.advanceOrCompleteLine();
     });
 
     this.input.keyboard.on("keydown-SPACE", () => {
+      ensureBgMusic(this);
       this.advanceOrCompleteLine();
     });
 

@@ -41,10 +41,19 @@ export class StartScene extends Phaser.Scene {
 
     button.on("pointerover", hoverIn);
     button.on("pointerout", hoverOut);
-    button.on("pointerdown", () => this.startIntro());
+    button.on("pointerdown", () => {
+      ensureBgMusic(this);
+      this.startIntro();
+    });
 
-    this.input.keyboard.on("keydown-SPACE", () => this.startIntro());
-    this.input.keyboard.on("keydown-ENTER", () => this.startIntro());
+    this.input.keyboard.on("keydown-SPACE", () => {
+      ensureBgMusic(this);
+      this.startIntro();
+    });
+    this.input.keyboard.on("keydown-ENTER", () => {
+      ensureBgMusic(this);
+      this.startIntro();
+    });
 
     this.tweens.add({
       targets: button,

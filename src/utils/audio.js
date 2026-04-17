@@ -1,61 +1,52 @@
-export function ensureBgMusic(scene) {
-  if (scene.registry.get("bgMusicPlaying")) {
+/**
+ * Background music manager using a plain HTML5 Audio element.
+ * This bypasses Phaser's Web Audio decoder entirely, which can
+ * silently fail on certain MP3 encodings.
+ */
+
+let audioEl = null;
+
+export function ensureBgMusic(_scene) {
+  // Already playing
+  if (audioEl && !audioEl.paused) {
     return;
   }
 
-  if (!scene.cache.audio.exists("bg-music-lv1")) {
-    return;
+  // Create element if needed
+  if (!audioEl) {
+    audioEl = new Audio("assets/audio/bg_music_lv1.mp3");
+    audioEl.loop = true;
+    audioEl.volume = 0.45;
   }
 
-  if (scene.sound?.locked) {
-    return;
+  // Play (returns a promise in modern browsers)
+  const playPromise = audioEl.play();
+  if (playPromise !== undefined) {
+    playPromise.catch((err) => {
+      console.warn("[audio] play blocked by browser autoplay policy:", err.message);
+    });
   }
-
-  const bgMusic = scene.sound.add("bg-music-lv1", {
-    loop: true,
-    volume: 0.28,
-  });
-
-  bgMusic.play();
-  scene.registry.set("bgMusicPlaying", true);
-  scene.registry.set("bgMusicRef", bgMusic);
 }
 
-export function stopBgMusic(scene) {
-  const bgMusic = scene.registry.get("bgMusicRef");
-  if (!bgMusic) {
-    scene.registry.set("bgMusicRef", null);
-    scene.registry.set("bgMusicPlaying", false);
+export function stopBgMusic(_scene) {
+  if (!audioEl) {
     return;
   }
 
-  const fadeDurationMs = 420;
+  // Fade out over ~400ms
+  const fadeSteps = 20;
+  const fadeInterval = 20; // ms per step
+  const startVol = audioEl.volume;
+  let step = 0;
 
-  if (scene.tweens) {
-    scene.tweens.add({
-      targets: bgMusic,
-      volume: 0,
-      duration: fadeDurationMs,
-      ease: "Quad.out",
-      onComplete: () => {
-        bgMusic.stop();
-        bgMusic.destroy();
-      },
-    });
-  } else {
-    bgMusic.stop();
-    bgMusic.destroy();
-  }
-
-  setTimeout(() => {
-    if (bgMusic.isPlaying) {
-      bgMusic.stop();
-      bgMusic.destroy();
+  const fade = setInterval(() => {
+    step += 1;
+    audioEl.volume = Math.max(0, startVol * (1 - step / fadeSteps));
+    if (step >= fadeSteps) {
+      clearInterval(fade);
+      audioEl.pause();
+      audioEl.currentTime = 0;
+      audioEl.volume = startVol;
     }
-    if (scene.registry.get("bgMusicRef") === bgMusic) {
-      scene.registry.set("bgMusicRef", null);
-    }
-  }, fadeDurationMs + 80);
-
-  scene.registry.set("bgMusicPlaying", false);
+  }, fadeInterval);
 }
