@@ -6,6 +6,7 @@ export class BootScene extends Phaser.Scene {
   preload() {
     this.load.image("player-car", "assets/sprites/player_car.png");
     this.load.image("player-car-last-life", "assets/sprites/player_car_last_life.png");
+    this.load.image("gas-cylinder", "assets/sprites/gas_cylinder.png");
     this.load.image("road-tile", "assets/sprites/road_tile.png");
     this.load.image("obstacle-car-red", "assets/sprites/obstacle_car_red.png");
     this.load.image("obstacle-car-blue", "assets/sprites/obstacle_car_blue.png");
@@ -21,6 +22,9 @@ export class BootScene extends Phaser.Scene {
     if (!this.textures.exists("player-car-last-life") && this.textures.exists("player-car-last-life-fallback")) {
       this.textures.renameTexture("player-car-last-life-fallback", "player-car-last-life");
     }
+    if (!this.textures.exists("gas-cylinder") && this.textures.exists("gas-cylinder-fallback")) {
+      this.textures.renameTexture("gas-cylinder-fallback", "gas-cylinder");
+    }
     if (!this.textures.exists("road-tile") && this.textures.exists("road-tile-fallback")) {
       this.textures.renameTexture("road-tile-fallback", "road-tile");
     }
@@ -32,7 +36,16 @@ export class BootScene extends Phaser.Scene {
         this.textures.renameTexture("obstacle-car-b", "obstacle-car-blue");
       }
     }
-    this.scene.start("game");
+    if (!this.textures.exists("intro-bg") && this.textures.exists("intro-bg-fallback")) {
+      this.textures.renameTexture("intro-bg-fallback", "intro-bg");
+    }
+    if (!this.textures.exists("intro-char-left") && this.textures.exists("intro-char-left-fallback")) {
+      this.textures.renameTexture("intro-char-left-fallback", "intro-char-left");
+    }
+    if (!this.textures.exists("intro-char-right") && this.textures.exists("intro-char-right-fallback")) {
+      this.textures.renameTexture("intro-char-right-fallback", "intro-char-right");
+    }
+    this.scene.start("intro");
   }
 
   createProceduralTextures() {
@@ -73,7 +86,7 @@ export class BootScene extends Phaser.Scene {
     g.fillRect(14, 30, 22, 6);
     g.fillStyle(0x166534, 1);
     g.fillRect(18, -2, 14, 8);
-    g.generateTexture("gas-cylinder", 50, 72);
+    g.generateTexture("gas-cylinder-fallback", 50, 72);
 
     g.clear();
     g.fillStyle(0x22c55e, 1);
@@ -167,6 +180,39 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0x000000, 0.22);
     g.fillRect(0, 0, 1280, 720);
     g.generateTexture("blur-overlay", 1280, 720);
+
+    g.clear();
+    g.fillStyle(0x0b1020, 1);
+    g.fillRect(0, 0, 1280, 720);
+    g.fillStyle(0x111a33, 1);
+    g.fillRect(0, 360, 1280, 360);
+    g.fillStyle(0x1d4ed8, 0.28);
+    g.fillCircle(240, 180, 280);
+    g.fillStyle(0x06b6d4, 0.24);
+    g.fillCircle(1040, 170, 260);
+    g.fillStyle(0x22d3ee, 0.1);
+    for (let i = 0; i < 12; i += 1) {
+      g.fillRect(i * 120, 0, 24, 720);
+    }
+    g.generateTexture("intro-bg-fallback", 1280, 720);
+
+    g.clear();
+    g.fillStyle(0x22c55e, 1);
+    g.fillRoundedRect(0, 0, 240, 420, 24);
+    g.fillStyle(0xf8fafc, 0.9);
+    g.fillCircle(120, 90, 54);
+    g.fillStyle(0x0f172a, 0.22);
+    g.fillRoundedRect(44, 170, 152, 206, 18);
+    g.generateTexture("intro-char-left-fallback", 240, 420);
+
+    g.clear();
+    g.fillStyle(0xf97316, 1);
+    g.fillRoundedRect(0, 0, 240, 420, 24);
+    g.fillStyle(0xffedd5, 0.95);
+    g.fillCircle(120, 90, 54);
+    g.fillStyle(0x0f172a, 0.22);
+    g.fillRoundedRect(44, 170, 152, 206, 18);
+    g.generateTexture("intro-char-right-fallback", 240, 420);
 
     g.destroy();
   }
