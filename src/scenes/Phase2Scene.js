@@ -72,7 +72,7 @@ export class Phase2Scene extends Phaser.Scene {
     this.buildHud();
 
     this.cameras.main.fadeIn(800, 0, 0, 0);
-    ensureBgMusic(this);
+    ensureBgMusic(this, "assets/audio/bg_music_lv2.mp3");
   }
 
   buildBackground() {

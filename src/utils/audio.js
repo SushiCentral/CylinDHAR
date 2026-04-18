@@ -5,18 +5,27 @@
  */
 
 let audioEl = null;
+let currentTrack = null;
 
-export function ensureBgMusic(_scene) {
-  // Already playing
-  if (audioEl && !audioEl.paused) {
+export function ensureBgMusic(_scene, track = "assets/audio/bg_music_lv1.mp3") {
+  // If already playing the same track, do nothing
+  if (audioEl && !audioEl.paused && currentTrack === track) {
     return;
+  }
+
+  // If a different track is requested, stop the current one
+  if (audioEl && currentTrack !== track) {
+    audioEl.pause();
+    audioEl.currentTime = 0;
+    audioEl = null;
   }
 
   // Create element if needed
   if (!audioEl) {
-    audioEl = new Audio("assets/audio/bg_music_lv1.mp3");
+    audioEl = new Audio(track);
     audioEl.loop = true;
     audioEl.volume = 0.45;
+    currentTrack = track;
   }
 
   // Play (returns a promise in modern browsers)
