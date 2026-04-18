@@ -27,13 +27,12 @@ const FIRST_HIT_IMAGE_SPEED_MAX = 340 * SPEED_MULTIPLIER;
 const HIT_INVULNERABLE_MS = 1200;
 
 const MEME_EVENTS = [
-  { text: "Bro replied [skull]", icon: "icon-chat", kind: "shake" },
+  { text: "jogender is calling", icon: "icon-chat", kind: "shake" },
   { text: "1% battery", icon: "icon-battery", kind: "freeze" },
-  { text: "New reel dropped", icon: "icon-reel", kind: "reverse" },
-  { text: "Group chat exploding", icon: "icon-chat", kind: "blur" },
-  { text: "Mom calling... again", icon: "icon-chat", kind: "shake" },
-  { text: "POV: You looked away", icon: "icon-battery", kind: "blur" },
-  { text: "Friend sent a Bihari reel 🎶", icon: "icon-reel", kind: "reel" },
+  { text: "rear end mein itching", icon: "icon-reel", kind: "reverse" },
+  { text: "ammi jaan calling... again", icon: "icon-chat", kind: "shake" },
+  { text: "huzz dms", icon: "icon-battery", kind: "blur" },
+  { text: "Friend sent a Bihari reel", icon: "icon-reel", kind: "reel" },
 ];
 
 export class GameScene extends Phaser.Scene {
@@ -122,12 +121,6 @@ export class GameScene extends Phaser.Scene {
     this.roadEdgeLeft = this.add.rectangle(this.driveLeft, 360, 12, 740, 0xe2e8f0, 0.7).setDepth(2);
     this.roadEdgeRight = this.add.rectangle(this.driveRight, 360, 12, 740, 0xe2e8f0, 0.7).setDepth(2);
 
-    this.streetLights = this.add.group();
-    for (let i = 0; i < 9; i += 1) {
-      const y = 40 + i * 85;
-      this.streetLights.add(this.add.circle(160, y, 10, 0x22d3ee, 0.45));
-      this.streetLights.add(this.add.circle(1120, y + 32, 10, 0x22d3ee, 0.45));
-    }
 
     this.blurOverlay = this.add
       .image(640, 360, "blur-overlay")
@@ -298,6 +291,24 @@ export class GameScene extends Phaser.Scene {
       .setAlpha(0)
       .setVisible(false);
 
+    // Red warning banner (top of screen)
+    this.warningBanner = this.add
+      .rectangle(640, -40, 460, 38, 0x7f1d1d, 0.82)
+      .setStrokeStyle(1, 0xfca5a5, 0.6)
+      .setDepth(70)
+      .setVisible(false);
+    this.warningText = this.add
+      .text(640, -40, "", {
+        ...uiStyle,
+        fontSize: "18px",
+        color: "#fecaca",
+        strokeThickness: 4,
+      })
+      .setOrigin(0.5)
+      .setDepth(71)
+      .setVisible(false);
+    this.warningHideAt = 0;
+
     this.lastUiTimeText = "Time: 0.0";
     this.lastControlsState = "normal";
     this.lastCylinderText = "Cylinders: 0";
@@ -386,6 +397,7 @@ export class GameScene extends Phaser.Scene {
         segment.y -= this.roadSegmentHeight * 2;
       }
     }
+
   }
 
   updatePlayerMovement(delta, now) {
@@ -492,6 +504,21 @@ export class GameScene extends Phaser.Scene {
       this.popupIcon.setVisible(false);
     }
 
+    // Auto-hide warning banner
+    if (this.warningBanner.visible && now >= this.warningHideAt) {
+      this.tweens.add({
+        targets: [this.warningBanner, this.warningText],
+        y: -40,
+        alpha: 0,
+        duration: 300,
+        ease: "Quad.in",
+        onComplete: () => {
+          this.warningBanner.setVisible(false);
+          this.warningText.setVisible(false);
+        },
+      });
+    }
+
     if (now < this.blurUntil) {
       this.blurOverlay.setVisible(true);
       this.blurOverlay.setAlpha(0.17);
@@ -507,21 +534,11 @@ export class GameScene extends Phaser.Scene {
       this.neonPulseAccumulator += delta * 0.014;
       const pulse = 0.12 + Math.abs(Math.sin(this.neonPulseAccumulator)) * 0.22;
       this.neonOverlay.setAlpha(pulse);
-      const lights = this.streetLights.getChildren();
-      for (let i = 0; i < lights.length; i += 1) {
-        const light = lights[i];
-        const flicker = 0.35 + Math.abs(Math.sin(this.neonPulseAccumulator + i * 0.75)) * 0.55;
-        light.setFillStyle(0x22d3ee, flicker);
-      }
       const reelWobble = Math.sin(this.neonPulseAccumulator * 1.25) * 0.007;
       this.cameras.main.setZoom(Math.max(this.cameras.main.zoom, 1 + reelWobble));
     } else {
       this.neonOverlay.setVisible(false);
       this.neonOverlay.setAlpha(0);
-      const lights = this.streetLights.getChildren();
-      for (let i = 0; i < lights.length; i += 1) {
-        lights[i].setFillStyle(0x22d3ee, 0.45);
-      }
     }
 
     if (now < this.freezeOverlayUntil) {
@@ -618,13 +635,17 @@ export class GameScene extends Phaser.Scene {
 
     if (eventConfig.kind === "shake") {
       this.cameras.main.shake(240, 0.006);
+      this.showWarning("⚠ INCOMING CALL — SCREEN SHAKING");
     } else if (eventConfig.kind === "reverse") {
       this.controlsReversedUntil = now + Phaser.Math.Between(1200, 2200);
+      this.showWarning("⚠ CONTROLS REVERSED");
     } else if (eventConfig.kind === "freeze") {
       this.controlsFrozenUntil = now + Phaser.Math.Between(320, 520);
       this.freezeOverlayUntil = this.controlsFrozenUntil;
+      this.showWarning("⚠ INPUTS FROZEN — LAG SPIKE");
     } else if (eventConfig.kind === "blur") {
       this.blurUntil = now + Phaser.Math.Between(900, 1700);
+      this.showWarning("⚠ VISION BLURRED");
     } else if (eventConfig.kind === "reel") {
       this.neonBurstUntil = now + Phaser.Math.Between(1600, 2400);
       this.reelCooldownUntil = now + Phaser.Math.Between(11000, 14000);
@@ -637,7 +658,29 @@ export class GameScene extends Phaser.Scene {
       if (this.cache.audio.exists("reel-stinger")) {
         this.sound.play("reel-stinger", { volume: 0.5 });
       }
+      this.showWarning("⚠ REEL DISTRACTION — NEON OVERLOAD");
     }
+  }
+
+  showWarning(message) {
+    this.warningText.setText(message);
+    this.warningBanner.setVisible(true);
+    this.warningText.setVisible(true);
+    this.warningBanner.setAlpha(0);
+    this.warningText.setAlpha(0);
+    this.warningBanner.y = -40;
+    this.warningText.y = -40;
+
+    this.tweens.killTweensOf([this.warningBanner, this.warningText]);
+    this.tweens.add({
+      targets: [this.warningBanner, this.warningText],
+      y: 24,
+      alpha: 1,
+      duration: 250,
+      ease: "Back.out",
+    });
+
+    this.warningHideAt = this.time.now + 1800;
   }
 
   spawnObstacle() {
@@ -1135,13 +1178,21 @@ export class GameScene extends Phaser.Scene {
 
     this.cameras.main.fadeIn(800, 0, 0, 0);
 
-    // Fade in the "Chapter 2" text softly
+    // Fade in the "Chapter 2" text, then transition to Phase 2
     this.tweens.add({
       targets: chapterText,
       alpha: 1,
       duration: 1500,
       delay: 400,
       ease: "Sine.easeIn",
+      onComplete: () => {
+        this.time.delayedCall(1500, () => {
+          this.cameras.main.fadeOut(800, 0, 0, 0);
+          this.cameras.main.once("camerafadeoutcomplete", () => {
+            this.scene.start("phase2");
+          });
+        });
+      },
     });
   }
 

@@ -1,7 +1,7 @@
 import { ensureBgMusic } from "../utils/audio.js";
 
 const DIALOGUE_1 = {
-  name: "Dispatch HQ",
+  name: "Gasinder Singh Koli",
   text: "India mei cylinders laane ki zarurat hai - It's CylinDHARing time",
 };
 

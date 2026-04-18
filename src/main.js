@@ -3,6 +3,8 @@ import { StartScene } from "./scenes/StartScene.js";
 import { IntroScene } from "./scenes/IntroScene.js";
 import { GameScene } from "./scenes/GameScene.js";
 import { GameOverScene } from "./scenes/GameOverScene.js";
+import { Phase2Scene } from "./scenes/Phase2Scene.js";
+import { Chapter3Scene } from "./scenes/Chapter3Scene.js";
 
 const GAME_WIDTH = 1280;
 const GAME_HEIGHT = 720;
@@ -27,7 +29,7 @@ const config = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  scene: [BootScene, StartScene, IntroScene, GameScene, GameOverScene],
+  scene: [BootScene, StartScene, IntroScene, GameScene, GameOverScene, Phase2Scene, Chapter3Scene],
 };
 
 new Phaser.Game(config);

@@ -17,6 +17,13 @@ export class BootScene extends Phaser.Scene {
     this.load.image("first-hit-image", "assets/sprites/image.png");
     this.load.image("railway-crossing", "assets/sprites/railway_crossing.png");
     this.load.image("train", "assets/sprites/train.png");
+    this.load.image("p2-train-top", "assets/sprites/train_top.png");
+    this.load.image("p2-bg", "assets/sprites/p2_bg.png");
+    this.load.image("p2-player-idle", "assets/sprites/p2_player_idle.png");
+    this.load.image("p2-player-run1", "assets/sprites/p2_player_run1.png");
+    this.load.image("p2-player-run2", "assets/sprites/p2_player_run2.png");
+    this.load.image("p2-player-jump", "assets/sprites/p2_player_jump.png");
+    this.load.image("p2-enemy", "assets/sprites/p2_enemy.png");
     this.createProceduralTextures();
   }
 
@@ -257,6 +264,154 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0x0f172a, 0.22);
     g.fillRoundedRect(44, 170, 152, 206, 18);
     g.generateTexture("intro-char-right-fallback", 240, 420);
+
+    // ── Phase 2 procedural textures (8-bit pixel art) ──
+    // All shapes use fillRect only for a blocky retro look.
+
+    // Player (side view, facing right, with gun)
+    g.clear();
+    g.fillStyle(0x22d3ee, 1);
+    g.fillRect(10, 16, 24, 28);
+    g.fillStyle(0xf8fafc, 1);
+    g.fillRect(12, 0, 20, 16);
+    g.fillStyle(0x0e7490, 1);
+    g.fillRect(26, 6, 4, 4);
+    g.fillStyle(0x0f172a, 1);
+    g.fillRect(12, 44, 8, 12);
+    g.fillRect(24, 44, 8, 12);
+    g.fillStyle(0x94a3b8, 1);
+    g.fillRect(34, 26, 10, 4);
+    g.fillRect(30, 24, 8, 10);
+    g.generateTexture("p2-player", 44, 56);
+
+    // Bullet
+    g.clear();
+    g.fillStyle(0xfbbf24, 1);
+    g.fillRect(0, 0, 16, 6);
+    g.fillStyle(0xffffff, 0.6);
+    g.fillRect(10, 1, 5, 4);
+    g.generateTexture("p2-bullet", 16, 6);
+
+    // Train car rooftop (platform tile)
+    g.clear();
+    g.fillStyle(0x4b5563, 1);
+    g.fillRect(0, 0, 64, 24);
+    g.fillStyle(0x6b7280, 1);
+    g.fillRect(0, 0, 64, 4);
+    g.fillStyle(0x374151, 1);
+    g.fillRect(0, 20, 64, 4);
+    g.fillStyle(0x9ca3af, 1);
+    for (let rx = 4; rx < 60; rx += 10) {
+      g.fillRect(rx, 1, 2, 2);
+    }
+    g.fillStyle(0x374151, 0.5);
+    g.fillRect(16, 4, 1, 16);
+    g.fillRect(32, 4, 1, 16);
+    g.fillRect(48, 4, 1, 16);
+    g.generateTexture("p2-platform", 64, 24);
+
+    // Train car side (decoration below platforms)
+    g.clear();
+    g.fillStyle(0x374151, 1);
+    g.fillRect(0, 0, 64, 48);
+    g.fillStyle(0x1f2937, 1);
+    g.fillRect(0, 0, 64, 2);
+    g.fillStyle(0x93c5fd, 0.5);
+    g.fillRect(6, 8, 10, 10);
+    g.fillRect(22, 8, 10, 10);
+    g.fillRect(38, 8, 10, 10);
+    g.fillRect(54, 8, 8, 10);
+    g.fillStyle(0x1f2937, 1);
+    g.fillRect(0, 36, 64, 4);
+    g.fillStyle(0x111827, 1);
+    g.fillRect(8, 40, 12, 8);
+    g.fillRect(44, 40, 12, 8);
+    g.fillStyle(0x6b7280, 1);
+    g.fillRect(10, 42, 8, 4);
+    g.fillRect(46, 42, 8, 4);
+    g.generateTexture("p2-train-side", 64, 48);
+
+    // Cargo crate (elevated platform on train)
+    g.clear();
+    g.fillStyle(0x92400e, 1);
+    g.fillRect(0, 0, 32, 24);
+    g.fillStyle(0x78350f, 1);
+    g.fillRect(0, 0, 32, 2);
+    g.fillRect(0, 22, 32, 2);
+    g.fillRect(0, 0, 2, 24);
+    g.fillRect(30, 0, 2, 24);
+    g.fillStyle(0xfbbf24, 0.4);
+    g.fillRect(14, 0, 4, 24);
+    g.fillRect(0, 10, 32, 4);
+    g.generateTexture("p2-cargo", 32, 24);
+
+    // Enemy (8-bit blocky)
+    g.clear();
+    g.fillStyle(0xef4444, 1);
+    g.fillRect(4, 14, 28, 26);
+    g.fillStyle(0xfca5a5, 1);
+    g.fillRect(8, 0, 20, 16);
+    g.fillStyle(0x7f1d1d, 1);
+    g.fillRect(12, 6, 4, 4);
+    g.fillRect(20, 6, 4, 4);
+    g.fillStyle(0x991b1b, 1);
+    g.fillRect(12, 12, 12, 2);
+    g.fillStyle(0x0f172a, 1);
+    g.fillRect(6, 40, 10, 12);
+    g.fillRect(20, 40, 10, 12);
+    g.generateTexture("p2-enemy-fallback", 36, 52);
+
+    // Heart (HUD icon, blocky)
+    g.clear();
+    g.fillStyle(0xef4444, 1);
+    g.fillRect(2, 0, 8, 8);
+    g.fillRect(14, 0, 8, 8);
+    g.fillRect(0, 4, 24, 8);
+    g.fillRect(2, 12, 20, 4);
+    g.fillRect(6, 16, 12, 4);
+    g.fillRect(10, 20, 4, 2);
+    g.generateTexture("p2-heart", 24, 22);
+
+    // Muzzle flash (blocky)
+    g.clear();
+    g.fillStyle(0xfbbf24, 0.9);
+    g.fillRect(2, 2, 16, 16);
+    g.fillStyle(0xffffff, 0.6);
+    g.fillRect(6, 6, 8, 8);
+    g.generateTexture("p2-muzzle", 20, 20);
+
+    // Background far (night sky with stars + mountains)
+    g.clear();
+    g.fillStyle(0x0f172a, 1);
+    g.fillRect(0, 0, 256, 200);
+    g.fillStyle(0xffffff, 0.5);
+    for (let i = 0; i < 20; i += 1) {
+      const sx = (i * 47 + 13) % 256;
+      const sy = (i * 31 + 7) % 140;
+      g.fillRect(sx, sy, 2, 2);
+    }
+    g.fillStyle(0x1e293b, 1);
+    g.fillRect(0, 150, 50, 50);
+    g.fillRect(40, 130, 60, 70);
+    g.fillRect(110, 155, 40, 45);
+    g.fillRect(160, 125, 50, 75);
+    g.fillRect(220, 145, 36, 55);
+    g.generateTexture("p2-bg-far", 256, 200);
+
+    // Background mid (landscape with telegraph poles)
+    g.clear();
+    g.fillStyle(0x1a1a2e, 1);
+    g.fillRect(0, 200, 256, 100);
+    g.fillStyle(0x16213e, 1);
+    g.fillRect(0, 180, 256, 20);
+    g.fillStyle(0x4b5563, 1);
+    g.fillRect(60, 100, 4, 200);
+    g.fillRect(180, 100, 4, 200);
+    g.fillRect(56, 100, 12, 4);
+    g.fillRect(176, 100, 12, 4);
+    g.fillStyle(0x374151, 0.4);
+    g.fillRect(64, 102, 112, 1);
+    g.generateTexture("p2-bg-mid", 256, 300);
 
     g.destroy();
   }
