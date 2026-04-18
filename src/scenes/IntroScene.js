@@ -1,12 +1,12 @@
 
 
 const DIALOGUE_1 = {
-  name: "Gasinder Singh Koli",
+  name: "Gas Singh",
   text: "India mei cylinders laane ki zarurat hai - It's CylinDHARing time",
 };
 
 const DIALOGUE_2 = {
-  name: "female",
+  name: "Female",
   text: "Mai bhi tere saath aari aari aari",
 };
 
