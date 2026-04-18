@@ -1,4 +1,4 @@
-import { ensureBgMusic } from "../utils/audio.js";
+
 
 export class StartScene extends Phaser.Scene {
   constructor() {
@@ -42,16 +42,13 @@ export class StartScene extends Phaser.Scene {
     button.on("pointerover", hoverIn);
     button.on("pointerout", hoverOut);
     button.on("pointerdown", () => {
-      ensureBgMusic(this);
       this.startIntro();
     });
 
     this.input.keyboard.on("keydown-SPACE", () => {
-      ensureBgMusic(this);
       this.startIntro();
     });
     this.input.keyboard.on("keydown-ENTER", () => {
-      ensureBgMusic(this);
       this.startIntro();
     });
 
@@ -73,7 +70,7 @@ export class StartScene extends Phaser.Scene {
       return;
     }
 
-    ensureBgMusic(this);
+
     this.isStarting = true;
     this.cameras.main.fadeOut(220, 0, 0, 0);
     this.time.delayedCall(230, () => {

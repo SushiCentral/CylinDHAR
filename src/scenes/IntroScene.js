@@ -1,4 +1,4 @@
-import { ensureBgMusic } from "../utils/audio.js";
+
 
 const DIALOGUE_1 = {
   name: "Gasinder Singh Koli",
@@ -16,7 +16,7 @@ export class IntroScene extends Phaser.Scene {
   }
 
   create() {
-    ensureBgMusic(this);
+
 
     this.isTransitioning = false;
     this.isLineComplete = false;
@@ -72,12 +72,10 @@ export class IntroScene extends Phaser.Scene {
     this.gasSinghSfx.play().catch(() => { });
 
     this.input.on("pointerdown", () => {
-      ensureBgMusic(this);
       this.advanceOrCompleteLine();
     });
 
     this.input.keyboard.on("keydown-SPACE", () => {
-      ensureBgMusic(this);
       this.advanceOrCompleteLine();
     });
 

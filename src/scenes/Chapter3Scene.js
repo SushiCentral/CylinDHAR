@@ -8,40 +8,170 @@ export class Chapter3Scene extends Phaser.Scene {
   create() {
     stopBgMusic(this);
 
-    this.add.rectangle(640, 360, 1280, 720, 0x000000, 1).setDepth(0);
+    this.bg = this.add.rectangle(640, 360, 1280, 720, 0x000000, 1).setDepth(0);
 
-    // ── Phase 1: End cutscene image ──
-    const cutscene = this.add
-      .image(640, 360, "end-cutscene")
-      .setAlpha(0)
-      .setDepth(1);
+    // Dialogue box UI (reused for both cutscenes)
+    this.dialogueBox = this.add
+      .rectangle(640, 586, 1040, 130, 0x0b1220, 0.9)
+      .setStrokeStyle(2, 0x38bdf8, 0.85)
+      .setDepth(10)
+      .setAlpha(0);
 
-    const scaleX = 1280 / cutscene.width;
-    const scaleY = 720 / cutscene.height;
-    cutscene.setScale(Math.max(scaleX, scaleY));
+    this.dialogueText = this.add
+      .text(640, 586, "", {
+        fontFamily: "Trebuchet MS",
+        fontSize: "28px",
+        color: "#f8fafc",
+        stroke: "#020617",
+        strokeThickness: 6,
+        wordWrap: { width: 950 },
+        align: "center",
+      })
+      .setOrigin(0.5)
+      .setDepth(11)
+      .setAlpha(0);
+
+    this.promptText = this.add
+      .text(1100, 646, "Click / Space to continue", {
+        fontFamily: "Trebuchet MS",
+        fontSize: "16px",
+        color: "#94a3b8",
+        stroke: "#020617",
+        strokeThickness: 4,
+      })
+      .setOrigin(1, 0.5)
+      .setDepth(11)
+      .setAlpha(0);
 
     this.cameras.main.fadeIn(800, 0, 0, 0);
 
-    // Fade in the cutscene
+    this.phase = 0;
+    this.isReady = false;
+
+    // Start the sequence
+    this.showCutscene1();
+
+    // Input to advance
+    this.input.on("pointerdown", () => this.advance());
+    this.input.keyboard.on("keydown-SPACE", () => this.advance());
+  }
+
+  advance() {
+    if (!this.isReady) {
+      return;
+    }
+
+    this.isReady = false;
+
+    if (this.phase === 1) {
+      this.transitionToCutscene2();
+    } else if (this.phase === 2) {
+      this.transitionToCredits();
+    }
+  }
+
+  showCutscene1() {
+    this.cutscene1 = this.add
+      .image(640, 360, "end-cutscene-1")
+      .setAlpha(0)
+      .setDepth(1);
+
+    const scaleX = 1280 / this.cutscene1.width;
+    const scaleY = 720 / this.cutscene1.height;
+    this.cutscene1.setScale(Math.max(scaleX, scaleY));
+
+    // Fade in cutscene 1
     this.tweens.add({
-      targets: cutscene,
+      targets: this.cutscene1,
       alpha: 1,
-      duration: 2500,
+      duration: 2000,
       delay: 300,
+      ease: "Sine.easeInOut",
+      onComplete: () => {
+        // Show dialogue
+        this.showDialogue("Cylinders delivered on time - MOMOS KI PLATE SASTI HO GAYI");
+        this.phase = 1;
+      },
+    });
+  }
+
+  transitionToCutscene2() {
+    // Hide dialogue
+    this.hideDialogue();
+
+    // Fade out cutscene 1, fade in cutscene 2
+    this.cutscene2 = this.add
+      .image(640, 360, "end-cutscene-2")
+      .setAlpha(0)
+      .setDepth(2);
+
+    const scaleX = 1280 / this.cutscene2.width;
+    const scaleY = 720 / this.cutscene2.height;
+    this.cutscene2.setScale(Math.max(scaleX, scaleY));
+
+    this.tweens.add({
+      targets: this.cutscene1,
+      alpha: 0,
+      duration: 1200,
       ease: "Sine.easeInOut",
     });
 
-    // ── Phase 2: Fade out cutscene → show credits ──
-    this.time.delayedCall(6000, () => {
+    this.tweens.add({
+      targets: this.cutscene2,
+      alpha: 1,
+      duration: 2000,
+      delay: 800,
+      ease: "Sine.easeInOut",
+      onComplete: () => {
+        this.showDialogue("One step closer to achieving world peace");
+        this.phase = 2;
+      },
+    });
+  }
+
+  transitionToCredits() {
+    this.hideDialogue();
+
+    // Fade out cutscene 2
+    this.tweens.add({
+      targets: this.cutscene2,
+      alpha: 0,
+      duration: 1500,
+      ease: "Sine.easeInOut",
+      onComplete: () => {
+        this.showCredits();
+      },
+    });
+  }
+
+  showDialogue(text) {
+    this.dialogueText.setText(text);
+
+    this.tweens.add({
+      targets: [this.dialogueBox, this.dialogueText],
+      alpha: 1,
+      duration: 600,
+      ease: "Sine.easeOut",
+    });
+
+    // Show prompt after a short delay
+    this.time.delayedCall(800, () => {
       this.tweens.add({
-        targets: cutscene,
-        alpha: 0,
-        duration: 1500,
-        ease: "Sine.easeInOut",
-        onComplete: () => {
-          this.showCredits();
-        },
+        targets: this.promptText,
+        alpha: 1,
+        duration: 400,
       });
+      this.isReady = true;
+    });
+  }
+
+  hideDialogue() {
+    this.promptText.setAlpha(0);
+    this.tweens.add({
+      targets: [this.dialogueBox, this.dialogueText],
+      alpha: 0,
+      duration: 400,
+      ease: "Sine.easeIn",
     });
   }
 
@@ -54,7 +184,6 @@ export class Chapter3Scene extends Phaser.Scene {
       align: "center",
     };
 
-    // Credits container — starts below screen and scrolls up
     const creditsY = 780;
 
     const creditsTitle = this.add
@@ -102,7 +231,6 @@ export class Chapter3Scene extends Phaser.Scene {
       offsetY += 90;
     }
 
-    // Thank you at the bottom
     const thanksText = this.add
       .text(640, offsetY + 30, "Thank you for playing!", {
         ...style,
@@ -114,7 +242,6 @@ export class Chapter3Scene extends Phaser.Scene {
 
     creditTexts.push(thanksText);
 
-    // Scroll all credits upward
     const totalHeight = offsetY + 80 - 780;
     const scrollDuration = totalHeight * 12;
 
@@ -124,7 +251,6 @@ export class Chapter3Scene extends Phaser.Scene {
       duration: scrollDuration,
       ease: "Linear",
       onComplete: () => {
-        // Fade out credits
         this.tweens.add({
           targets: creditTexts,
           alpha: 0,
@@ -133,52 +259,9 @@ export class Chapter3Scene extends Phaser.Scene {
             for (const t of creditTexts) {
               t.destroy();
             }
-            this.showChapter3();
           },
         });
       },
-    });
-  }
-
-  showChapter3() {
-    const titleText = this.add
-      .text(640, 300, "Chapter 3", {
-        fontFamily: "Trebuchet MS",
-        fontSize: "72px",
-        color: "#ffffff",
-        stroke: "#000000",
-        strokeThickness: 5,
-      })
-      .setOrigin(0.5)
-      .setAlpha(0)
-      .setDepth(5);
-
-    const subText = this.add
-      .text(640, 390, "Coming Soon...", {
-        fontFamily: "Trebuchet MS",
-        fontSize: "28px",
-        color: "#cbd5e1",
-        stroke: "#000000",
-        strokeThickness: 4,
-      })
-      .setOrigin(0.5)
-      .setAlpha(0)
-      .setDepth(5);
-
-    this.tweens.add({
-      targets: titleText,
-      alpha: 1,
-      duration: 1500,
-      delay: 400,
-      ease: "Sine.easeIn",
-    });
-
-    this.tweens.add({
-      targets: subText,
-      alpha: 1,
-      duration: 1500,
-      delay: 1200,
-      ease: "Sine.easeIn",
     });
   }
 }

@@ -24,7 +24,8 @@ export class BootScene extends Phaser.Scene {
     this.load.image("p2-player-run2", "assets/sprites/p2_player_run2.png");
     this.load.image("p2-player-jump", "assets/sprites/p2_player_jump.png");
     this.load.image("p2-enemy", "assets/sprites/p2_enemy.png");
-    this.load.image("end-cutscene", "assets/sprites/end_cutscene.png");
+    this.load.image("end-cutscene-1", "assets/sprites/end_cutscene1.png");
+    this.load.image("end-cutscene-2", "assets/sprites/end_cutscene2.png");
     this.createProceduralTextures();
   }
 
