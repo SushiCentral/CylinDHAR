@@ -26,6 +26,21 @@ export class BootScene extends Phaser.Scene {
     this.load.image("p2-enemy", "assets/sprites/p2_enemy.png");
     this.load.image("end-cutscene-1", "assets/sprites/end_cutscene1.png");
     this.load.image("end-cutscene-2", "assets/sprites/end_cutscene2.png");
+
+    // Phase 3 layers
+    this.load.image("p3-bg", "assets/sprites/p3_bg.png");
+    this.load.image("p3-bg-lvl2", "assets/sprites/p3_bg_lvl2.png");
+    this.load.image("p3-seat-left", "assets/sprites/left_seat.png");
+    this.load.image("p3-seat-right", "assets/sprites/right_seat.png");
+    this.load.image("p3-enemy-left", "assets/sprites/left_enemy.png");
+    this.load.image("p3-enemy-right", "assets/sprites/right_enemy.png");
+
+    // Explosion frames
+    for (let i = 1; i <= 16; i += 1) {
+      const key = `explosion_${String(i).padStart(2, "0")}`;
+      this.load.image(key, `assets/sprites/explosion/explosion_${String(i).padStart(2, "0")}.png`);
+    }
+
     this.createProceduralTextures();
   }
 
@@ -414,6 +429,51 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0x374151, 0.4);
     g.fillRect(64, 102, 112, 1);
     g.generateTexture("p2-bg-mid", 256, 300);
+
+    // ── Phase 3 procedural textures (only items without real assets) ──
+
+    // Phase 3 enemy (blocky thug)
+    g.clear();
+    g.fillStyle(0xb91c1c, 1);
+    g.fillRect(6, 14, 24, 28);
+    g.fillStyle(0xfca5a5, 1);
+    g.fillRect(10, 0, 16, 16);
+    g.fillStyle(0x7f1d1d, 1);
+    g.fillRect(14, 6, 4, 4);
+    g.fillRect(20, 6, 4, 4);
+    g.fillStyle(0x0f172a, 1);
+    g.fillRect(8, 42, 8, 14);
+    g.fillRect(20, 42, 8, 14);
+    g.fillStyle(0x6b7280, 1);
+    g.fillRect(30, 24, 8, 4);
+    g.generateTexture("p3-enemy", 38, 56);
+
+    // Player bullet
+    g.clear();
+    g.fillStyle(0xfbbf24, 1);
+    g.fillRect(0, 1, 10, 4);
+    g.fillStyle(0xffffff, 0.6);
+    g.fillRect(6, 2, 4, 2);
+    g.generateTexture("p3-bullet-player", 10, 6);
+
+    // Enemy bullet
+    g.clear();
+    g.fillStyle(0xef4444, 1);
+    g.fillRect(0, 1, 8, 4);
+    g.fillStyle(0xfca5a5, 0.5);
+    g.fillRect(4, 2, 4, 2);
+    g.generateTexture("p3-bullet-enemy", 8, 6);
+
+    // Crosshair
+    g.clear();
+    g.fillStyle(0x22d3ee, 0.8);
+    g.fillRect(10, 0, 2, 8);
+    g.fillRect(10, 14, 2, 8);
+    g.fillRect(0, 10, 8, 2);
+    g.fillRect(14, 10, 8, 2);
+    g.fillStyle(0x22d3ee, 0.5);
+    g.fillCircle(11, 11, 3);
+    g.generateTexture("p3-crosshair", 22, 22);
 
     g.destroy();
   }

@@ -105,6 +105,7 @@ export class Phase2Scene extends Phaser.Scene {
       r: Phaser.Input.Keyboard.KeyCodes.R,
       f: Phaser.Input.Keyboard.KeyCodes.F,
       space: Phaser.Input.Keyboard.KeyCodes.SPACE,
+      three: Phaser.Input.Keyboard.KeyCodes.THREE,
     });
 
     this.input.on("pointerdown", () => {
@@ -239,6 +240,12 @@ export class Phase2Scene extends Phaser.Scene {
     this.updateCleanup();
     this.updateHud();
     this.updateParallax();
+
+    // Debug: press 3 to skip to 100%
+    if (Phaser.Input.Keyboard.JustDown(this.keys.three)) {
+      this.player.x = PLAYER_START_X + TARGET_DISTANCE;
+    }
+
     this.checkWinLose();
   }
 
@@ -750,9 +757,66 @@ export class Phase2Scene extends Phaser.Scene {
     this.player.body.enable = false;
     stopBgMusic(this);
 
-    this.cameras.main.fadeOut(1500, 0, 0, 0);
-    this.cameras.main.once("camerafadeoutcomplete", () => {
-      this.scene.start("chapter3");
+    // Explosion position — ahead of the player on the train
+    const explosionX = this.player.x + 350;
+    const explosionY = GROUND_Y - 60;
+
+    // Create explosion sprite using the first frame
+    const explosion = this.add
+      .image(explosionX, explosionY, "explosion_01")
+      .setDepth(50)
+      .setScale(2.5);
+
+    // Screen shake and flash on detonation
+    this.cameras.main.shake(800, 0.02);
+    this.cameras.main.flash(300, 255, 200, 50);
+
+    // Play through all 16 frames
+    const frameKeys = [];
+    for (let i = 1; i <= 16; i += 1) {
+      frameKeys.push(`explosion_${String(i).padStart(2, "0")}`);
+    }
+
+    let frameIndex = 0;
+    const frameDelay = 50; // ms per frame (~0.8s total)
+
+    const explosionTimer = this.time.addEvent({
+      delay: frameDelay,
+      repeat: frameKeys.length - 1,
+      callback: () => {
+        frameIndex += 1;
+        if (frameIndex < frameKeys.length) {
+          explosion.setTexture(frameKeys[frameIndex]);
+        }
+
+        // Grow the explosion slightly over time
+        const progress = frameIndex / (frameKeys.length - 1);
+        explosion.setScale(2.5 + progress * 1.5);
+        explosion.setAlpha(1 - progress * 0.2);
+
+        // Extra shake at frame 8 (peak)
+        if (frameIndex === 8) {
+          this.cameras.main.shake(400, 0.015);
+          this.cameras.main.flash(150, 255, 150, 30);
+        }
+      },
+    });
+
+    // After explosion finishes, fade to chapter 3
+    this.time.delayedCall(frameKeys.length * frameDelay + 400, () => {
+      // Fade out explosion
+      this.tweens.add({
+        targets: explosion,
+        alpha: 0,
+        duration: 600,
+        ease: "Sine.easeIn",
+      });
+
+      // Fade camera to black
+      this.cameras.main.fadeOut(1500, 0, 0, 0);
+      this.cameras.main.once("camerafadeoutcomplete", () => {
+        this.scene.start("phase3-combat");
+      });
     });
   }
 }
