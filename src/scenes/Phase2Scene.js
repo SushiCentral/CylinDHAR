@@ -53,6 +53,10 @@ export class Phase2Scene extends Phaser.Scene {
     this.lastGenX = 0;
     this.platformRefs = [];
     this.enemyDataMap = new Map();
+
+    // Shoot SFX
+    this.rasenganSfx = new Audio("assets/audio/rasengan.mp3");
+    this.rasenganSfx.volume = 0.5;
     this.bgAutoScroll = 0;
     this.runFrame = 1;
     this.lastRunFrameSwap = 0;
@@ -333,6 +337,11 @@ export class Phase2Scene extends Phaser.Scene {
     }
 
     this.lastFireTime = now;
+
+    // Play shoot SFX
+    const sfx = this.rasenganSfx.cloneNode();
+    sfx.volume = 0.5;
+    sfx.play().catch(() => {});
 
     const offX = this.facing === 1 ? 22 : -22;
     const bx = this.player.x + offX;
@@ -770,6 +779,11 @@ export class Phase2Scene extends Phaser.Scene {
     // Screen shake and flash on detonation
     this.cameras.main.shake(800, 0.02);
     this.cameras.main.flash(300, 255, 200, 50);
+
+    // Explosion SFX
+    const boomSfx = new Audio("assets/audio/vine-boom.mp3");
+    boomSfx.volume = 0.7;
+    boomSfx.play().catch(() => {});
 
     // Play through all 16 frames
     const frameKeys = [];

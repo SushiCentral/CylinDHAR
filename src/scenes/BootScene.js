@@ -26,6 +26,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image("p2-enemy", "assets/sprites/p2_enemy.png");
     this.load.image("end-cutscene-1", "assets/sprites/end_cutscene1.png");
     this.load.image("end-cutscene-2", "assets/sprites/end_cutscene2.png");
+    this.load.image("devs-image", "assets/sprites/Devs_image.png");
 
     // Phase 3 layers
     this.load.image("p3-bg", "assets/sprites/p3_bg.png");

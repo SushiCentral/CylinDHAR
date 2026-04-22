@@ -242,12 +242,54 @@ export class Chapter3Scene extends Phaser.Scene {
 
     creditTexts.push(thanksText);
 
-    const totalHeight = offsetY + 80 - 780;
+    // ── Devs image in a framed box ──
+    const devsImgY = offsetY + 180;
+
+    // Frame border
+    const frame = this.add
+      .rectangle(640, devsImgY, 340, 260, 0x1e293b, 1)
+      .setStrokeStyle(4, 0xfbbf24, 1)
+      .setDepth(5);
+
+    // Inner frame accent
+    this.add
+      .rectangle(640, devsImgY, 320, 240, 0x000000, 0.4)
+      .setStrokeStyle(2, 0x93c5fd, 0.6)
+      .setDepth(5);
+
+    const devsImg = this.add
+      .image(640, devsImgY, "devs-image")
+      .setDepth(6);
+
+    // Scale to fit inside the frame
+    const maxW = 310;
+    const maxH = 230;
+    const imgScale = Math.min(maxW / devsImg.width, maxH / devsImg.height);
+    devsImg.setScale(imgScale);
+
+    // "The Devs" label under the frame
+    const devsLabel = this.add
+      .text(640, devsImgY + 145, "The Devs", {
+        ...style,
+        fontSize: "24px",
+        color: "#fbbf24",
+      })
+      .setOrigin(0.5)
+      .setDepth(5);
+
+    creditTexts.push(frame, devsImg, devsLabel);
+
+    // Also push the inner frame accent rectangle
+    // (we need a reference to destroy it)
+    const innerFrame = this.children.list[this.children.list.length - 3];
+    creditTexts.push(innerFrame);
+
+    const totalHeight = devsImgY + 200 - 780;
     const scrollDuration = totalHeight * 12;
 
     this.tweens.add({
       targets: creditTexts,
-      y: `-=${totalHeight + 300}`,
+      y: `-=${totalHeight + 400}`,
       duration: scrollDuration,
       ease: "Linear",
       onComplete: () => {
@@ -259,7 +301,252 @@ export class Chapter3Scene extends Phaser.Scene {
             for (const t of creditTexts) {
               t.destroy();
             }
+            // Start the easter egg after credits disappear
+            this.startEasterEgg();
           },
+        });
+      },
+    });
+  }
+
+  // ── EASTER EGG SEQUENCE ──────────────────────────────────
+
+  startEasterEgg() {
+    const style = {
+      fontFamily: "Trebuchet MS",
+      color: "#f8fafc",
+      stroke: "#020617",
+      strokeThickness: 5,
+      align: "center",
+      wordWrap: { width: 1000 },
+    };
+
+    // Step 1: After 10 secs — "The Game has ended..."
+    this.time.delayedCall(10000, () => {
+      this.showEasterText(
+        ' The Game has ended why are YOU still here??? ',
+        { ...style, fontSize: "36px", color: "#ef4444" },
+        5000,
+        () => {
+          // Step 2: "Maybe..."
+          this.showEasterText(
+            "Maybe.....What if.....just what if there is a.....",
+            { ...style, fontSize: "30px", color: "#94a3b8" },
+            3000,
+            () => {
+              // Step 3: "Chapter 4" goofy animation
+              this.showChapter4Goofy(() => {
+                // Step 4: "Nah, no way..."
+                this.showEasterText(
+                  'Nah, no way Me tired',
+                  { ...style, fontSize: "32px", color: "#fbbf24" },
+                  5000,
+                  () => {
+                    // Step 5: "but here is a AI generated video..."
+                    this.showEasterText(
+                      "but here is a AI genrated video of the devs dancing ENJOY!!!!!",
+                      { ...style, fontSize: "28px", color: "#22d3ee" },
+                      3000,
+                      () => {
+                        // Play the video
+                        this.playDevDanceVideo();
+                      },
+                    );
+                  },
+                );
+              });
+            },
+          );
+        },
+      );
+    });
+  }
+
+  showEasterText(message, textStyle, holdMs, onDone) {
+    const txt = this.add
+      .text(640, 360, message, textStyle)
+      .setOrigin(0.5)
+      .setDepth(20)
+      .setAlpha(0);
+
+    this.tweens.add({
+      targets: txt,
+      alpha: 1,
+      duration: 600,
+      ease: "Sine.easeOut",
+      onComplete: () => {
+        this.time.delayedCall(holdMs, () => {
+          this.tweens.add({
+            targets: txt,
+            alpha: 0,
+            duration: 500,
+            ease: "Sine.easeIn",
+            onComplete: () => {
+              txt.destroy();
+              if (onDone) onDone();
+            },
+          });
+        });
+      },
+    });
+  }
+
+  showChapter4Goofy(onDone) {
+    const ch4 = this.add
+      .text(640, 360, "Chapter 4", {
+        fontFamily: "Comic Sans MS, cursive, sans-serif",
+        fontSize: "72px",
+        color: "#ff6b6b",
+        stroke: "#fbbf24",
+        strokeThickness: 8,
+        align: "center",
+      })
+      .setOrigin(0.5)
+      .setDepth(20)
+      .setAlpha(0)
+      .setScale(0.1);
+
+    // Pop in
+    this.tweens.add({
+      targets: ch4,
+      alpha: 1,
+      scaleX: 1.3,
+      scaleY: 1.3,
+      duration: 300,
+      ease: "Back.out",
+      onComplete: () => {
+        // Goofy bounce loop
+        const bounce = this.tweens.add({
+          targets: ch4,
+          scaleX: { from: 1.3, to: 0.8 },
+          scaleY: { from: 0.8, to: 1.3 },
+          angle: { from: -8, to: 8 },
+          duration: 300,
+          yoyo: true,
+          repeat: -1,
+          ease: "Sine.easeInOut",
+        });
+
+        // Color cycling
+        const colors = [0xff6b6b, 0xfbbf24, 0x22d3ee, 0xa78bfa, 0x34d399];
+        let ci = 0;
+        const colorTimer = this.time.addEvent({
+          delay: 200,
+          loop: true,
+          callback: () => {
+            ci = (ci + 1) % colors.length;
+            ch4.setColor(`#${colors[ci].toString(16).padStart(6, "0")}`);
+          },
+        });
+
+        // After 5 seconds, stop and remove
+        this.time.delayedCall(5000, () => {
+          bounce.stop();
+          colorTimer.remove();
+          this.tweens.add({
+            targets: ch4,
+            alpha: 0,
+            scaleX: 3,
+            scaleY: 3,
+            duration: 400,
+            ease: "Quad.in",
+            onComplete: () => {
+              ch4.destroy();
+              if (onDone) onDone();
+            },
+          });
+        });
+      },
+    });
+  }
+
+  playDevDanceVideo() {
+    // Create an HTML video element overlaid on the canvas
+    const canvas = this.game.canvas;
+    const canvasRect = canvas.getBoundingClientRect();
+
+    const video = document.createElement("video");
+    video.src = "assets/sprites/dev_dance_easter_egg.mp4";
+    video.style.position = "absolute";
+
+    // Size and center like the devs image frame
+    const vw = 560;
+    const vh = 420;
+    const scaleX = canvasRect.width / 1280;
+    const scaleY = canvasRect.height / 720;
+    const scaledW = vw * scaleX;
+    const scaledH = vh * scaleY;
+    video.style.width = `${scaledW}px`;
+    video.style.height = `${scaledH}px`;
+    video.style.left = `${canvasRect.left + (canvasRect.width - scaledW) / 2}px`;
+    video.style.top = `${canvasRect.top + (canvasRect.height - scaledH) / 2}px`;
+    video.style.border = "4px solid #fbbf24";
+    video.style.borderRadius = "8px";
+    video.style.boxShadow = "0 0 40px rgba(251,191,36,0.4)";
+    video.style.zIndex = "9999";
+    video.style.backgroundColor = "#000";
+    video.autoplay = true;
+    video.playsInline = true;
+
+    document.body.appendChild(video);
+
+    // Draw a Phaser frame behind (in case canvas shifts)
+    const phaserFrame = this.add
+      .rectangle(640, 360, vw + 20, vh + 20, 0x1e293b, 0.9)
+      .setStrokeStyle(4, 0xfbbf24, 1)
+      .setDepth(20);
+
+    video.play().catch(() => {});
+
+    video.addEventListener("ended", () => {
+      video.remove();
+      phaserFrame.destroy();
+      this.showFinalMessage();
+    });
+
+    // Fallback in case video fails to load
+    video.addEventListener("error", () => {
+      video.remove();
+      phaserFrame.destroy();
+      this.showFinalMessage();
+    });
+  }
+
+  showFinalMessage() {
+    const txt = this.add
+      .text(
+        640,
+        360,
+        "ok now there is really nothing ahead move on with ur life and touch some grass find a women or something aman already has one now",
+        {
+          fontFamily: "Trebuchet MS",
+          fontSize: "26px",
+          color: "#94a3b8",
+          stroke: "#020617",
+          strokeThickness: 5,
+          align: "center",
+          wordWrap: { width: 900 },
+        },
+      )
+      .setOrigin(0.5)
+      .setDepth(20)
+      .setAlpha(0);
+
+    // Fade in
+    this.tweens.add({
+      targets: txt,
+      alpha: 1,
+      duration: 800,
+      ease: "Sine.easeOut",
+      onComplete: () => {
+        // Hold for 8 seconds then very slow fade out everything
+        this.time.delayedCall(8000, () => {
+          this.tweens.add({
+            targets: [txt, this.bg],
+            alpha: 0,
+            duration: 5000,
+            ease: "Sine.easeInOut",
+          });
         });
       },
     });
