@@ -34,6 +34,9 @@ export class BootScene extends Phaser.Scene {
     this.load.image("p3-seat-right", "assets/sprites/right_seat.png");
     this.load.image("p3-enemy-left", "assets/sprites/left_enemy.png");
     this.load.image("p3-enemy-right", "assets/sprites/right_enemy.png");
+    this.load.image("p3-gun-idle", "assets/sprites/gun_idle.png");
+    this.load.image("p3-gun-fire", "assets/sprites/gun_fire.png");
+    this.load.image("p3-bullet-enemy", "assets/sprites/bullet.png");
 
     // Explosion frames
     for (let i = 1; i <= 16; i += 1) {
@@ -455,14 +458,6 @@ export class BootScene extends Phaser.Scene {
     g.fillStyle(0xffffff, 0.6);
     g.fillRect(6, 2, 4, 2);
     g.generateTexture("p3-bullet-player", 10, 6);
-
-    // Enemy bullet
-    g.clear();
-    g.fillStyle(0xef4444, 1);
-    g.fillRect(0, 1, 8, 4);
-    g.fillStyle(0xfca5a5, 0.5);
-    g.fillRect(4, 2, 4, 2);
-    g.generateTexture("p3-bullet-enemy", 8, 6);
 
     // Crosshair
     g.clear();

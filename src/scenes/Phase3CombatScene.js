@@ -16,6 +16,13 @@ const MAX_ENEMY_BULLETS = 10;
 const ENEMY_BULLET_SPEED = 420;
 const ENEMY_ENTRY_DELAY = 400;
 
+// Gun / dodge constants
+const GUN_Y = 720;              // anchored to bottom of screen
+const GUN_MIN_X = 200;          // left movement clamp
+const GUN_MAX_X = 1080;         // right movement clamp
+const GUN_FIRE_DURATION = 100;  // ms the fire texture shows
+const DODGE_HIT_RADIUS = 80;    // how close a bullet must be to gun X to hit
+
 const WAVE_CONFIG = [
   { total: 8, spawnMin: 1100, spawnMax: 1500, label: "WAVE 1" },
   { total: 10, spawnMin: 850, spawnMax: 1200, label: "WAVE 2" },
@@ -78,6 +85,7 @@ export class Phase3CombatScene extends Phaser.Scene {
 
     this.buildLayers();
     this.buildEnemyPools();
+    this.buildGun();
     this.buildCrosshair();
     this.buildUI();
     this.buildInput();
@@ -124,12 +132,26 @@ export class Phase3CombatScene extends Phaser.Scene {
     });
   }
 
+  // ── GUN ────────────────────────────────────────────────────
+
+  buildGun() {
+    // Gun sprite: anchored to bottom-center, origin at bottom-center
+    this.gun = this.add
+      .image(640, GUN_Y, "p3-gun-idle")
+      .setOrigin(0.5, 1)
+      .setDepth(78)
+      .setScale(0.45);
+
+    // Track current gun X for dodge detection
+    this.gunX = 640;
+  }
+
   // ── CROSSHAIR ─────────────────────────────────────────────
 
   buildCrosshair() {
     this.crosshair = this.add
       .image(640, 360, "p3-crosshair")
-      .setDepth(60)
+      .setDepth(85)
       .setScale(1.5);
 
     this.input.setDefaultCursor("none");
@@ -211,6 +233,10 @@ export class Phase3CombatScene extends Phaser.Scene {
   buildInput() {
     this.input.on("pointermove", (pointer) => {
       this.crosshair.setPosition(pointer.x, pointer.y);
+
+      // Move gun left/right following the mouse (clamped)
+      this.gunX = Phaser.Math.Clamp(pointer.x, GUN_MIN_X, GUN_MAX_X);
+      this.gun.x = this.gunX;
     });
 
     this.input.on("pointerdown", (pointer) => {
@@ -472,9 +498,9 @@ export class Phase3CombatScene extends Phaser.Scene {
   }
 
   enemyShoot(enemy) {
-    // Shoot toward player POV (center-bottom)
-    const targetX = 640 + Phaser.Math.Between(-80, 80);
-    const targetY = 650;
+    // Shoot toward the gun's current position (player can dodge!)
+    const targetX = this.gunX + Phaser.Math.Between(-40, 40);
+    const targetY = GUN_Y;
     const angle = Phaser.Math.Angle.Between(enemy.x, enemy.y, targetX, targetY);
 
     let bullet = this.enemyBullets.get(enemy.x, enemy.y, "p3-bullet-enemy");
@@ -487,8 +513,8 @@ export class Phase3CombatScene extends Phaser.Scene {
     bullet.body.enable = true;
     bullet.setPosition(enemy.x, enemy.y);
     bullet.setDepth(7);
-    bullet.setRotation(angle);
-    bullet.setScale(1.2);
+    bullet.setRotation(angle + Math.PI / 2);
+    bullet.setScale(0.05);
     bullet.setVelocity(
       Math.cos(angle) * ENEMY_BULLET_SPEED,
       Math.sin(angle) * ENEMY_BULLET_SPEED,
@@ -535,6 +561,24 @@ export class Phase3CombatScene extends Phaser.Scene {
       }
     });
 
+    // ── Gun fire animation ──
+    this.gun.setTexture("p3-gun-fire");
+    this.time.delayedCall(GUN_FIRE_DURATION, () => {
+      if (this.gun && this.gun.active) {
+        this.gun.setTexture("p3-gun-idle");
+      }
+    });
+
+    // Gun recoil kick
+    const gunBaseY = GUN_Y;
+    this.tweens.add({
+      targets: this.gun,
+      y: gunBaseY + 8,
+      duration: 50,
+      yoyo: true,
+      ease: "Quad.out",
+    });
+
     // Muzzle flash at click
     const flash = this.add.circle(targetX, targetY, 8, 0xfbbf24, 0.7).setDepth(55);
     this.tweens.add({
@@ -555,7 +599,7 @@ export class Phase3CombatScene extends Phaser.Scene {
       onComplete: () => impact.destroy(),
     });
 
-    // Recoil
+    // Light camera recoil
     this.cameras.main.shake(40, 0.002);
 
     if (hitEnemy) {
@@ -730,11 +774,18 @@ export class Phase3CombatScene extends Phaser.Scene {
       if (!b.active) {
         return;
       }
-      // Bullets hitting the bottom of screen = hitting the player (first-person)
-      if (b.y > 580 && b.x > 200 && b.x < 1080) {
-        b.setActive(false).setVisible(false);
-        b.body.enable = false;
-        this.playerHit();
+      // Bullet must reach the bottom AND be near the gun's X to hit (dodge mechanic)
+      if (b.y > 580) {
+        const distToGun = Math.abs(b.x - this.gunX);
+        if (distToGun < DODGE_HIT_RADIUS) {
+          b.setActive(false).setVisible(false);
+          b.body.enable = false;
+          this.playerHit();
+        } else {
+          // Missed! Bullet passes by harmlessly
+          b.setActive(false).setVisible(false);
+          b.body.enable = false;
+        }
       }
     });
   }
