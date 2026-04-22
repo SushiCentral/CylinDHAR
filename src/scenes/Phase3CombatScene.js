@@ -83,6 +83,10 @@ export class Phase3CombatScene extends Phaser.Scene {
 
     this.enemyDataMap = new Map();
 
+    // Gunshot SFX
+    this.gunshotSfx = new Audio("assets/audio/gun_shot_audio.mp3");
+    this.gunshotSfx.volume = 0.5;
+
     this.buildLayers();
     this.buildEnemyPools();
     this.buildGun();
@@ -527,6 +531,11 @@ export class Phase3CombatScene extends Phaser.Scene {
         enemy.clearTint();
       }
     });
+
+    // Enemy gunshot sound (lower volume)
+    const enemySfx = this.gunshotSfx.cloneNode();
+    enemySfx.volume = 0.2;
+    enemySfx.play().catch(() => {});
   }
 
   // ── PLAYER SHOOTING ───────────────────────────────────────
@@ -568,6 +577,11 @@ export class Phase3CombatScene extends Phaser.Scene {
         this.gun.setTexture("p3-gun-idle");
       }
     });
+
+    // Player gunshot sound
+    const shotSfx = this.gunshotSfx.cloneNode();
+    shotSfx.volume = 0.5;
+    shotSfx.play().catch(() => {});
 
     // Gun recoil kick
     const gunBaseY = GUN_Y;
