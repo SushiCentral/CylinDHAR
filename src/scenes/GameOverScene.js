@@ -25,6 +25,13 @@ export class GameOverScene extends Phaser.Scene {
     const resultKey = data.result || "crash";
     const copy = RESULT_COPY[resultKey] || RESULT_COPY.crash;
 
+    // Play game over sound on loss
+    if (resultKey !== "win") {
+      const gameOverSfx = new Audio("assets/audio/game_over_sound.mp3");
+      gameOverSfx.volume = 0.8;
+      gameOverSfx.play().catch(() => {});
+    }
+
     const timeValue = Number.isFinite(data.survivalSeconds) ? data.survivalSeconds : 0;
     const bestValue = Number.isFinite(data.bestTime) ? data.bestTime : 0;
 
