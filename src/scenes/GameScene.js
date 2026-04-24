@@ -1189,7 +1189,7 @@ export class GameScene extends Phaser.Scene {
         this.time.delayedCall(1500, () => {
           this.cameras.main.fadeOut(800, 0, 0, 0);
           this.cameras.main.once("camerafadeoutcomplete", () => {
-            this.scene.start("phase2");
+            this.scene.start("chapter2-cutscene");
           });
         });
       },

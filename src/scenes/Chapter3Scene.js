@@ -394,62 +394,30 @@ export class Chapter3Scene extends Phaser.Scene {
   showChapter4Goofy(onDone) {
     const ch4 = this.add
       .text(640, 360, "Chapter 4", {
-        fontFamily: "Comic Sans MS, cursive, sans-serif",
-        fontSize: "72px",
-        color: "#ff6b6b",
-        stroke: "#fbbf24",
-        strokeThickness: 8,
+        fontFamily: "Trebuchet MS",
+        fontSize: "64px",
+        color: "#f8fafc",
+        stroke: "#020617",
+        strokeThickness: 7,
         align: "center",
       })
       .setOrigin(0.5)
       .setDepth(20)
-      .setAlpha(0)
-      .setScale(0.1);
+      .setAlpha(0);
 
-    // Pop in
+    // Simple fade in, hold, fade out — same style as other chapter titles
     this.tweens.add({
       targets: ch4,
       alpha: 1,
-      scaleX: 1.3,
-      scaleY: 1.3,
-      duration: 300,
-      ease: "Back.out",
+      duration: 1500,
+      ease: "Sine.easeIn",
       onComplete: () => {
-        // Goofy bounce loop
-        const bounce = this.tweens.add({
-          targets: ch4,
-          scaleX: { from: 1.3, to: 0.8 },
-          scaleY: { from: 0.8, to: 1.3 },
-          angle: { from: -8, to: 8 },
-          duration: 300,
-          yoyo: true,
-          repeat: -1,
-          ease: "Sine.easeInOut",
-        });
-
-        // Color cycling
-        const colors = [0xff6b6b, 0xfbbf24, 0x22d3ee, 0xa78bfa, 0x34d399];
-        let ci = 0;
-        const colorTimer = this.time.addEvent({
-          delay: 200,
-          loop: true,
-          callback: () => {
-            ci = (ci + 1) % colors.length;
-            ch4.setColor(`#${colors[ci].toString(16).padStart(6, "0")}`);
-          },
-        });
-
-        // After 5 seconds, stop and remove
-        this.time.delayedCall(5000, () => {
-          bounce.stop();
-          colorTimer.remove();
+        this.time.delayedCall(3000, () => {
           this.tweens.add({
             targets: ch4,
             alpha: 0,
-            scaleX: 3,
-            scaleY: 3,
-            duration: 400,
-            ease: "Quad.in",
+            duration: 800,
+            ease: "Sine.easeOut",
             onComplete: () => {
               ch4.destroy();
               if (onDone) onDone();

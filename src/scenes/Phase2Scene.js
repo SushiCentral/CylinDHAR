@@ -829,7 +829,7 @@ export class Phase2Scene extends Phaser.Scene {
       // Fade camera to black
       this.cameras.main.fadeOut(1500, 0, 0, 0);
       this.cameras.main.once("camerafadeoutcomplete", () => {
-        this.scene.start("phase3-combat");
+        this.scene.start("chapter3-cutscene");
       });
     });
   }
