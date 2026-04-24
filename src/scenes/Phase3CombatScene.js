@@ -87,6 +87,12 @@ export class Phase3CombatScene extends Phaser.Scene {
     this.gunshotSfx = new Audio("assets/audio/gun_shot_audio.mp3");
     this.gunshotSfx.volume = 0.5;
 
+    // Background music — persists through ending and credits
+    window.__creditsBgm = new Audio("assets/audio/SAINT MOTEL - A Good Song Never Dies by Pinocchio.mp3");
+    window.__creditsBgm.loop = true;
+    window.__creditsBgm.volume = 0.25;
+    window.__creditsBgm.play().catch(() => {});
+
     this.buildLayers();
     this.buildEnemyPools();
     this.buildGun();

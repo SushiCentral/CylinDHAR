@@ -243,17 +243,17 @@ export class Chapter3Scene extends Phaser.Scene {
     creditTexts.push(thanksText);
 
     // ── Devs image in a framed box ──
-    const devsImgY = offsetY + 180;
+    const devsImgY = offsetY + 330;
 
     // Frame border
     const frame = this.add
-      .rectangle(640, devsImgY, 340, 260, 0x1e293b, 1)
+      .rectangle(640, devsImgY, 750, 560, 0x1e293b, 1)
       .setStrokeStyle(4, 0xfbbf24, 1)
       .setDepth(5);
 
     // Inner frame accent
     this.add
-      .rectangle(640, devsImgY, 320, 240, 0x000000, 0.4)
+      .rectangle(640, devsImgY, 730, 540, 0x000000, 0.4)
       .setStrokeStyle(2, 0x93c5fd, 0.6)
       .setDepth(5);
 
@@ -262,14 +262,14 @@ export class Chapter3Scene extends Phaser.Scene {
       .setDepth(6);
 
     // Scale to fit inside the frame
-    const maxW = 310;
-    const maxH = 230;
+    const maxW = 720;
+    const maxH = 530;
     const imgScale = Math.min(maxW / devsImg.width, maxH / devsImg.height);
     devsImg.setScale(imgScale);
 
     // "The Devs" label under the frame
     const devsLabel = this.add
-      .text(640, devsImgY + 145, "The Devs", {
+      .text(640, devsImgY + 310, "The Devs", {
         ...style,
         fontSize: "24px",
         color: "#fbbf24",
@@ -284,26 +284,30 @@ export class Chapter3Scene extends Phaser.Scene {
     const innerFrame = this.children.list[this.children.list.length - 3];
     creditTexts.push(innerFrame);
 
-    const totalHeight = devsImgY + 200 - 780;
-    const scrollDuration = totalHeight * 12;
+    // Scroll so the devs image lands at the vertical center (Y=360)
+    const scrollDistance = devsImgY - 360;
+    const scrollDuration = scrollDistance * 12;
 
     this.tweens.add({
       targets: creditTexts,
-      y: `-=${totalHeight + 400}`,
+      y: `-=${scrollDistance}`,
       duration: scrollDuration,
       ease: "Linear",
       onComplete: () => {
-        this.tweens.add({
-          targets: creditTexts,
-          alpha: 0,
-          duration: 800,
-          onComplete: () => {
-            for (const t of creditTexts) {
-              t.destroy();
-            }
-            // Start the easter egg after credits disappear
-            this.startEasterEgg();
-          },
+        // Hold at center for a moment, then fade
+        this.time.delayedCall(3000, () => {
+          this.tweens.add({
+            targets: creditTexts,
+            alpha: 0,
+            duration: 800,
+            onComplete: () => {
+              for (const t of creditTexts) {
+                t.destroy();
+              }
+              // Start the easter egg after credits disappear
+              this.startEasterEgg();
+            },
+          });
         });
       },
     });
@@ -334,11 +338,14 @@ export class Chapter3Scene extends Phaser.Scene {
             { ...style, fontSize: "30px", color: "#94a3b8" },
             3000,
             () => {
-              // Step 3: "Chapter 4" goofy animation
+              // Fade out credits music before Chapter 4
+              this.fadeOutCreditsBgm();
+
+              // Step 3: "Chapter 4" simple animation
               this.showChapter4Goofy(() => {
                 // Step 4: "Nah, no way..."
                 this.showEasterText(
-                  'Nah, no way Me tired',
+                  'Nah, no way Me too tired',
                   { ...style, fontSize: "32px", color: "#fbbf24" },
                   5000,
                   () => {
@@ -428,7 +435,26 @@ export class Chapter3Scene extends Phaser.Scene {
     });
   }
 
+  fadeOutCreditsBgm() {
+    if (!window.__creditsBgm) return;
+    const bgm = window.__creditsBgm;
+    const fadeSteps = 30;
+    const fadeInterval = 50;
+    const startVol = bgm.volume;
+    let step = 0;
+    const fade = setInterval(() => {
+      step += 1;
+      bgm.volume = Math.max(0, startVol * (1 - step / fadeSteps));
+      if (step >= fadeSteps) {
+        clearInterval(fade);
+        bgm.pause();
+        bgm.currentTime = 0;
+      }
+    }, fadeInterval);
+  }
+
   playDevDanceVideo() {
+
     // Create an HTML video element overlaid on the canvas
     const canvas = this.game.canvas;
     const canvasRect = canvas.getBoundingClientRect();
@@ -464,7 +490,7 @@ export class Chapter3Scene extends Phaser.Scene {
       .setStrokeStyle(4, 0xfbbf24, 1)
       .setDepth(20);
 
-    video.play().catch(() => {});
+    video.play().catch(() => { });
 
     video.addEventListener("ended", () => {
       video.remove();
@@ -485,7 +511,7 @@ export class Chapter3Scene extends Phaser.Scene {
       .text(
         640,
         360,
-        "ok now there is really nothing ahead move on with ur life and touch some grass find a women or something aman already has one now",
+        "ok now there is really nothing ahead move on with ur life and touch some grass",
         {
           fontFamily: "Trebuchet MS",
           fontSize: "26px",
